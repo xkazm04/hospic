@@ -25,9 +25,21 @@ Procurement can quickly compare prices for identical orthopedic products across 
 - [x] Same products from different vendors are grouped for price comparison
 - [x] UI is elegant, light-themed, with smooth animations (Motion)
 
-### Active
+### Active (v1.1)
 
-(Next milestone requirements go here)
+**Deep Research & Bulk Import**
+
+- [ ] User can generate structured research prompt from product specs
+- [ ] Research prompt opens Perplexity with copy-to-clipboard
+- [ ] Research output format enables consistent price comparison
+- [ ] User can import products from CSV files (bulk import)
+- [ ] CSV import supports column mapping to schema fields
+- [ ] Schema supports manufacturer (separate from vendor/supplier)
+- [ ] Schema supports manufacturer SKU (separate from supplier SKU)
+- [ ] System deduplicates products by SKU during import
+- [ ] User can navigate EMDN categories hierarchically (tree view)
+- [ ] Catalog performs well with 1000+ products
+- [ ] EMDN tree loads efficiently (lazy loading)
 
 ### Out of Scope
 
@@ -43,7 +55,11 @@ Procurement can quickly compare prices for identical orthopedic products across 
 
 **EMDN Classification:** European Medical Devices Nomenclature — hierarchical classification system for medical devices. We have `EMDN V2_EN.xlsx` which needs filtering to orthopedic-relevant categories only.
 
-**Data Sources:** Vendor product sheets in txt/markdown format containing specs, pricing, descriptions.
+**Data Sources:**
+- Vendor product sheets in txt/markdown format (AI extraction)
+- CSV exports from ERP/procurement systems (bulk import)
+- Sample: `docs/BornDigital DATA(SVK).csv` — 947 unique products, 10k transaction rows
+- Deep research via Perplexity for EU vendor pricing
 
 **Key Data Points to Extract:**
 - Basic: Product name, description, vendor SKU/catalog number
@@ -73,4 +89,4 @@ Procurement can quickly compare prices for identical orthopedic products across 
 | Dark gray + green UI accents | Professional, minimal design with subtle green highlights | ✓ v1.0 |
 
 ---
-*Last updated: 2026-02-02 after v1.0 milestone completion*
+*Last updated: 2026-02-02 after v1.1 milestone start*

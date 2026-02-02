@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-02)
 
 **Core value:** Procurement can quickly compare prices for identical orthopedic products across multiple vendors
-**Current focus:** Ready for next milestone
+**Current focus:** Milestone v1.1 — Deep Research & Bulk Import
 
 ## Current Position
 
-Phase: None — awaiting new milestone
-Plan: None
-Status: v1.0 shipped, ready for v1.1
-Last activity: 2026-02-02 - Completed v1.0 milestone
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements for v1.1
+Last activity: 2026-02-02 — Milestone v1.1 started
 
-Progress: Ready for /gsd:new-milestone
+Progress: Ready for roadmap creation
 
 ## Milestone History
 
@@ -27,7 +27,7 @@ Progress: Ready for /gsd:new-milestone
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
-Key v1.0 decisions:
+Key v1.0 decisions (still applicable):
 
 - Tailwind v4 with @theme CSS config (no tailwind.config.js)
 - Next.js 15 async cookies() API for Supabase server client
@@ -40,6 +40,15 @@ Key v1.0 decisions:
 
 - Permissive RLS policies need tightening when auth is added
 - Manual migration execution required (no automated migration runner)
+
+### Data Analysis (v1.1)
+
+CSV file `docs/BornDigital DATA(SVK).csv`:
+- 10,293 rows (transaction-level, many duplicates)
+- 947 unique products by SKU
+- 2-3 suppliers (Zimmer Slovakia, Enovis Slovakia)
+- 16 manufacturers (Zimmer Inc, Biomet, etc.)
+- Schema gap: need manufacturer + manufacturer_sku fields
 
 ### Pending Todos
 
@@ -55,5 +64,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: v1.0 milestone complete
+Stopped at: Defining v1.1 requirements
 Resume file: None

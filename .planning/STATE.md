@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 ## Current Position
 
 Phase: 6 of 7 (Bulk Import)
-Plan: 1 of 4 complete
+Plan: 2 of 4 complete
 Status: In progress
-Last activity: 2026-02-02 — Completed 06-01-PLAN.md
+Last activity: 2026-02-02 — Completed 06-02-PLAN.md
 
-Progress: [####......] 33% (1/3 phases verified)
+Progress: [#####.....] 50% (2/4 plans in phase 6)
 
 ## Milestone History
 
@@ -50,6 +50,8 @@ v1.1 decisions (Phase 6):
 - PapaParse 5.5.3 for CSV parsing (handles BOM, UTF-8 by default)
 - Preview mode with default 10 rows for user confirmation before full parse
 - Column mapping validates required fields (name, sku) separately from row data
+- Deduplication by (sku + vendor_id) pair, not SKU alone
+- Batch processing at 100 rows for import to avoid timeout/memory issues
 
 ### Technical Debt
 
@@ -79,6 +81,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Completed 06-01-PLAN.md
+Stopped at: Completed 06-02-PLAN.md
 Resume file: None
-Next action: Execute 06-02-PLAN.md (Import Wizard UI)
+Next action: Execute 06-03-PLAN.md (Mapping & Preview Steps)

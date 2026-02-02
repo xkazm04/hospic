@@ -64,12 +64,13 @@ Plans:
   3. User can preview all extracted data before saving to catalog
   4. User can edit/correct any extracted field before committing
   5. Gemini suggests appropriate EMDN classification based on product description
-**Plans**: TBD
+**Plans**: 4 plans
 
 Plans:
-- [ ] 03-01: TBD
-- [ ] 03-02: TBD
-- [ ] 03-03: TBD
+- [ ] 03-01-PLAN.md — Install Gemini SDK, create client module, define extraction schema
+- [ ] 03-02-PLAN.md — Create extraction and createProduct Server Actions
+- [ ] 03-03-PLAN.md — Create upload form and extraction preview UI components
+- [ ] 03-04-PLAN.md — Create extraction sheet and integrate into catalog page
 
 ### Phase 4: Comparison Engine
 **Goal**: Users can identify duplicate products and compare prices across vendors
@@ -95,11 +96,12 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. Foundation + Catalog | 3/3 | Complete | 2026-02-02 |
 | 2. Product Management | 4/4 | Complete | 2026-02-02 |
-| 3. AI Extraction | 0/3 | Not started | - |
+| 3. AI Extraction | 0/4 | Planned | - |
 | 4. Comparison Engine | 0/2 | Not started | - |
 
 ---
 *Roadmap created: 2026-02-02*
 *Phase 1 planned: 2026-02-02*
 *Phase 2 planned: 2026-02-02*
+*Phase 3 planned: 2026-02-02*
 *Depth: quick (3-5 phases)*

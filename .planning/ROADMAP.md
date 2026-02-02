@@ -29,12 +29,12 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. User can paginate through products (20 per page)
   4. User can search products by name, description, or SKU
   5. Table displays with light theme styling and smooth Framer Motion animations
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
-- [ ] 01-03: TBD
+- [ ] 01-01-PLAN.md — Project setup (Next.js 15, Tailwind v4, Supabase) and database schema
+- [ ] 01-02-PLAN.md — EMDN data import and seed data (vendors, materials, products)
+- [ ] 01-03-PLAN.md — Catalog table UI with filtering, search, pagination, and animations
 
 ### Phase 2: Product Management
 **Goal**: Users can view full product details and manage product data
@@ -91,11 +91,12 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation + Catalog | 0/3 | Not started | - |
+| 1. Foundation + Catalog | 0/3 | Planned | - |
 | 2. Product Management | 0/2 | Not started | - |
 | 3. AI Extraction | 0/3 | Not started | - |
 | 4. Comparison Engine | 0/2 | Not started | - |
 
 ---
 *Roadmap created: 2026-02-02*
+*Phase 1 planned: 2026-02-02*
 *Depth: quick (3-5 phases)*

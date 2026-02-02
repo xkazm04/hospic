@@ -5,6 +5,19 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronRight } from "lucide-react";
 import type { CategoryNode } from "@/lib/queries";
+import { EMDNBreadcrumb } from "@/components/product/emdn-breadcrumb";
+
+// Helper function to find category by ID in the tree
+function findCategoryById(categories: CategoryNode[], id: string): CategoryNode | null {
+  for (const cat of categories) {
+    if (cat.id === id) return cat;
+    if (cat.children.length > 0) {
+      const found = findCategoryById(cat.children, id);
+      if (found) return found;
+    }
+  }
+  return null;
+}
 
 interface CategoryTreeProps {
   categories: CategoryNode[];
@@ -92,6 +105,11 @@ export function CategoryTree({ categories }: CategoryTreeProps) {
   const searchParams = useSearchParams();
   const selectedId = searchParams.get("category");
 
+  // Find the selected category to show breadcrumb
+  const selectedCategory = selectedId
+    ? findCategoryById(categories, selectedId)
+    : null;
+
   const handleSelect = (id: string | null) => {
     const params = new URLSearchParams(searchParams.toString());
     if (id) {
@@ -110,15 +128,28 @@ export function CategoryTree({ categories }: CategoryTreeProps) {
   }
 
   return (
-    <div className="space-y-0.5 max-h-[280px] overflow-y-auto pr-1 -mr-1">
-      {categories.map((category) => (
-        <CategoryNodeComponent
-          key={category.id}
-          category={category}
-          selectedId={selectedId}
-          onSelect={handleSelect}
-        />
-      ))}
-    </div>
+    <>
+      {selectedCategory && selectedCategory.path && (
+        <div className="mb-3 pb-3 border-b border-border">
+          <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1.5">
+            Filtering
+          </p>
+          <EMDNBreadcrumb
+            path={selectedCategory.path}
+            categoryName={selectedCategory.name}
+          />
+        </div>
+      )}
+      <div className="space-y-0.5 max-h-[280px] overflow-y-auto pr-1 -mr-1">
+        {categories.map((category) => (
+          <CategoryNodeComponent
+            key={category.id}
+            category={category}
+            selectedId={selectedId}
+            onSelect={handleSelect}
+          />
+        ))}
+      </div>
+    </>
   );
 }

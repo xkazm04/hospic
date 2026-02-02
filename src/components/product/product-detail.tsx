@@ -1,14 +1,37 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { ProductWithRelations } from '@/lib/types'
 import { EMDNBreadcrumb } from './emdn-breadcrumb'
 import { RegulatoryInfo } from './regulatory-info'
+import {
+  getProductPriceComparison,
+  type ProductPriceComparison,
+} from '@/lib/actions/similarity'
+import { PriceComparisonTable } from '@/components/comparison/price-comparison-table'
 
 interface ProductDetailProps {
   product: ProductWithRelations
 }
 
 export function ProductDetail({ product }: ProductDetailProps) {
+  const [comparisonProducts, setComparisonProducts] = useState<
+    ProductPriceComparison[]
+  >([])
+  const [comparisonLoading, setComparisonLoading] = useState(true)
+
+  useEffect(() => {
+    async function fetchComparison() {
+      setComparisonLoading(true)
+      const result = await getProductPriceComparison(product.id)
+      if (result.success && result.data) {
+        setComparisonProducts(result.data)
+      }
+      setComparisonLoading(false)
+    }
+    fetchComparison()
+  }, [product.id])
+
   return (
     <div className="space-y-6 px-6 py-4 overflow-y-auto">
       {/* Section 1: Basic Info */}
@@ -66,11 +89,26 @@ export function ProductDetail({ product }: ProductDetailProps) {
       </div>
 
       {/* Section 5: Regulatory Information */}
-      <div>
+      <div className="pb-6 border-b border-border">
         <RegulatoryInfo
           udiDi={product.udi_di ?? null}
           ceMarked={product.ce_marked ?? false}
           mdrClass={product.mdr_class ?? null}
+        />
+      </div>
+
+      {/* Section 6: Price Comparison */}
+      <div>
+        <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide mb-1">
+          Price Comparison
+        </p>
+        <p className="text-sm text-muted-foreground mb-3">
+          Same or similar product from other vendors
+        </p>
+        <PriceComparisonTable
+          products={comparisonProducts}
+          currentProductId={product.id}
+          isLoading={comparisonLoading}
         />
       </div>
     </div>

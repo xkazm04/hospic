@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 ## Current Position
 
 Phase: 6 of 7 (Bulk Import)
-Plan: 3 of 4 complete
-Status: In progress
-Last activity: 2026-02-02 — Completed 06-03-PLAN.md
+Plan: 4 of 4 complete
+Status: Phase complete
+Last activity: 2026-02-02 — Completed 06-04-PLAN.md
 
-Progress: [#######...] 75% (3/4 plans in phase 6)
+Progress: [##########] 100% (4/4 plans in phase 6)
 
 ## Milestone History
 
@@ -54,6 +54,8 @@ v1.1 decisions (Phase 6):
 - Batch processing at 100 rows for import to avoid timeout/memory issues
 - Auto-detect CSV columns by case-insensitive header matching with common aliases
 - Validation status enum: valid | update | error with color-coded display
+- Wizard step flow: vendor -> upload -> mapping -> validation -> importing -> summary
+- Vendor selection required first since deduplication is per-vendor
 
 ### Technical Debt
 
@@ -83,6 +85,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Completed 06-03-PLAN.md
+Stopped at: Completed 06-04-PLAN.md (Phase 6 complete)
 Resume file: None
-Next action: Execute 06-04-PLAN.md (Import Wizard Page)
+Next action: Execute Phase 7 if planned, or milestone v1.1 complete

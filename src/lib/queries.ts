@@ -111,6 +111,8 @@ export async function getProducts(params: GetProductsParams = {}): Promise<GetPr
       udi_di,
       ce_marked,
       mdr_class,
+      manufacturer_name,
+      manufacturer_sku,
       created_at,
       updated_at,
       vendor:vendors(id, name, code, website, created_at, updated_at),

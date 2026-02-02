@@ -10,29 +10,29 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 ## Current Position
 
 Phase: 2 of 4 (Product Management)
-Plan: 3 of 3 complete
+Plan: 4 of 4 complete
 Status: Phase complete
-Last activity: 2026-02-02 - Completed 02-03-PLAN.md (Feature Components)
+Last activity: 2026-02-02 - Completed 02-04-PLAN.md (Product Sheet Integration)
 
-Progress: [######----] 60% (6/10 plans)
+Progress: [######----] 58% (7/12 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 6
-- Average duration: 8 min
-- Total execution time: 0.72 hours
+- Total plans completed: 7
+- Average duration: 9 min
+- Total execution time: 1.05 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-foundation-catalog | 3 | 35 min | 12 min |
-| 02-product-management | 3 | 8 min | 3 min |
+| 02-product-management | 4 | 20 min | 5 min |
 
 **Recent Trend:**
-- Last 5 plans: 15 min, 3 min, 2 min, 3 min
-- Trend: Improving
+- Last 5 plans: 15 min, 3 min, 2 min, 3 min, 12 min
+- Trend: Stable
 
 *Updated after each plan completion*
 
@@ -56,6 +56,8 @@ Recent decisions affecting current work:
 - Sheet default width min(500px, 90vw) for responsive desktop-first
 - Spring animation config (damping 25, stiffness 300) for smooth sheet feel
 - Use z.input/z.output types for React Hook Form with Zod transforms
+- Column factory function (createColumns) injects callbacks instead of static columns export
+- Server/Client boundary: page.tsx fetches all data, passes to CatalogClient wrapper
 
 ### Pending Todos
 
@@ -72,5 +74,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Completed 02-03-PLAN.md (Phase 2 complete)
+Stopped at: Completed 02-04-PLAN.md (Phase 2 complete)
 Resume file: None

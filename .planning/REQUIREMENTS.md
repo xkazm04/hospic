@@ -1,0 +1,116 @@
+# Requirements: MedCatalog
+
+**Defined:** 2026-02-02
+**Core Value:** Procurement can quickly compare prices for identical orthopedic products across multiple vendors
+
+## v1 Requirements
+
+Requirements for initial release. Each maps to roadmap phases.
+
+### Foundation
+
+- [ ] **FOUN-01**: Supabase schema supports products, vendors, pricing, materials, EMDN classification
+- [ ] **FOUN-02**: EMDN codes filtered to orthopedic-relevant categories and imported to database
+- [ ] **FOUN-03**: NextJS project with Tailwind v4, TypeScript, and Framer Motion configured
+
+### Catalog Display
+
+- [ ] **DISP-01**: User can view products in sortable table with frozen header and zebra striping
+- [ ] **DISP-02**: User can filter products by vendor, EMDN category, price range, and material
+- [ ] **DISP-03**: User can paginate through products (20 items per page)
+- [ ] **DISP-04**: User can search products by name, description, or SKU
+- [ ] **DISP-05**: Catalog table displays elegantly with light theme, advanced typography, Framer Motion animations
+
+### Product Data
+
+- [ ] **PROD-01**: User can view full product detail in modal or side panel
+- [ ] **PROD-02**: User can see EMDN classification code with hierarchy explanation
+- [ ] **PROD-03**: User can edit product metadata
+- [ ] **PROD-04**: User can delete products
+- [ ] **PROD-05**: User can see regulatory info (UDI, CE marking, MDR class)
+
+### AI Extraction
+
+- [ ] **EXTR-01**: User can upload txt/markdown vendor product sheet
+- [ ] **EXTR-02**: Gemini extracts structured data: name, description, SKU, vendor, pricing, specs, materials, regulatory info
+- [ ] **EXTR-03**: User can preview extracted data before saving
+- [ ] **EXTR-04**: User can edit/correct extracted fields before committing
+- [ ] **EXTR-05**: Gemini suggests EMDN classification based on product description
+
+### Duplicate Detection
+
+- [ ] **DUPL-01**: System warns user when adding product similar to existing one
+- [ ] **DUPL-02**: User sees similarity percentage and links to similar products
+
+### Price Comparison
+
+- [ ] **COMP-01**: Same/similar products from different vendors grouped for price comparison
+- [ ] **COMP-02**: User can see all vendor prices for a product at a glance
+
+## v2 Requirements
+
+Deferred to future release. Tracked but not in current roadmap.
+
+### Enhanced Features
+
+- **CONF-01**: Confidence scoring displayed per extracted field
+- **SAVE-01**: User can save filter presets for repeated use
+- **BULK-01**: User can bulk import products via CSV
+- **AUDT-01**: System tracks change history with user, timestamp, before/after values
+- **COMP-03**: Side-by-side comparison view for 3-4 products
+
+## Out of Scope
+
+Explicitly excluded. Documented to prevent scope creep.
+
+| Feature | Reason |
+|---------|--------|
+| Real-time vendor catalog sync | Massive complexity; vendors don't have consistent APIs |
+| ERP/EHR integration | Each hospital has different systems; scope explosion |
+| Multi-currency conversion | Exchange rate complexity; store prices in original currency |
+| Advanced analytics dashboard | Need data first; premature optimization |
+| Vendor management/scoring | Different problem domain |
+| Purchase order generation | Procurement workflow varies by org |
+| Multi-language support | English first; EMDN codes standardized in EU |
+| Complex role-based permissions | Prototype assumes trusted access |
+| Offline mode | Adds sync/conflict complexity |
+| Image recognition | Orthopedic implants look similar; high error rate |
+| Mobile-optimized UI | Desktop-first for procurement teams |
+
+## Traceability
+
+Which phases cover which requirements. Updated during roadmap creation.
+
+| Requirement | Phase | Status |
+|-------------|-------|--------|
+| FOUN-01 | Phase ? | Pending |
+| FOUN-02 | Phase ? | Pending |
+| FOUN-03 | Phase ? | Pending |
+| DISP-01 | Phase ? | Pending |
+| DISP-02 | Phase ? | Pending |
+| DISP-03 | Phase ? | Pending |
+| DISP-04 | Phase ? | Pending |
+| DISP-05 | Phase ? | Pending |
+| PROD-01 | Phase ? | Pending |
+| PROD-02 | Phase ? | Pending |
+| PROD-03 | Phase ? | Pending |
+| PROD-04 | Phase ? | Pending |
+| PROD-05 | Phase ? | Pending |
+| EXTR-01 | Phase ? | Pending |
+| EXTR-02 | Phase ? | Pending |
+| EXTR-03 | Phase ? | Pending |
+| EXTR-04 | Phase ? | Pending |
+| EXTR-05 | Phase ? | Pending |
+| DUPL-01 | Phase ? | Pending |
+| DUPL-02 | Phase ? | Pending |
+| COMP-01 | Phase ? | Pending |
+| COMP-02 | Phase ? | Pending |
+
+**Coverage:**
+- v1 requirements: 22 total
+- Mapped to phases: 0
+- Unmapped: 22 (will be mapped during roadmap creation)
+
+---
+*Requirements defined: 2026-02-02*
+*Last updated: 2026-02-02 after initial definition*

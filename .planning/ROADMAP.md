@@ -58,7 +58,9 @@ Plans:
   3. User can copy prompt to clipboard with one click
   4. User can open Perplexity in new tab
   5. Prompt format documented for consistent data entry
-**Plans**: TBD during planning
+**Plans**: 1 plan
+Plans:
+- [ ] 07-01-PLAN.md - Prompt template utility, ResearchPrompt component, ProductDetail integration
 
 ## Progress
 
@@ -69,7 +71,7 @@ Phases execute in numeric order: 5 -> 6 -> 7
 |-------|----------------|--------|-----------|
 | 5. Schema & Navigation | 2/2 | Verified | 2026-02-02 |
 | 6. Bulk Import | 4/4 | Verified | 2026-02-02 |
-| 7. Research Prompt | 0/? | Not Started | — |
+| 7. Research Prompt | 0/1 | Planned | — |
 
 ---
 *Roadmap created: 2026-02-02*

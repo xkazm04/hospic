@@ -1,17 +1,92 @@
-export default function Home() {
+import { Suspense } from "react";
+import { getProducts, getVendors, getMaterials, getEMDNCategories } from "@/lib/queries";
+import { DataTable } from "@/components/table/data-table";
+import { columns } from "@/components/table/columns";
+import { FilterSidebar, FilterSection } from "@/components/filters/filter-sidebar";
+import { SearchInput } from "@/components/filters/search-input";
+import { CategoryTree } from "@/components/filters/category-tree";
+import { VendorFilter } from "@/components/filters/vendor-filter";
+import { MaterialFilter } from "@/components/filters/material-filter";
+import { PriceRangeFilter } from "@/components/filters/price-range-filter";
+
+interface HomeProps {
+  searchParams: Promise<{
+    page?: string;
+    search?: string;
+    vendor?: string;
+    category?: string;
+    material?: string;
+    minPrice?: string;
+    maxPrice?: string;
+    sortBy?: string;
+    sortOrder?: string;
+  }>;
+}
+
+export default async function Home({ searchParams }: HomeProps) {
+  const params = await searchParams;
+
+  const page = parseInt(params.page || "1");
+  const pageSize = 20;
+
+  // Fetch data in parallel
+  const [productsResult, vendors, materials, categories] = await Promise.all([
+    getProducts({
+      page,
+      pageSize,
+      search: params.search,
+      vendor: params.vendor,
+      category: params.category,
+      material: params.material,
+      minPrice: params.minPrice ? parseFloat(params.minPrice) : undefined,
+      maxPrice: params.maxPrice ? parseFloat(params.maxPrice) : undefined,
+      sortBy: params.sortBy,
+      sortOrder: params.sortOrder as "asc" | "desc" | undefined,
+    }),
+    getVendors(),
+    getMaterials(),
+    getEMDNCategories(),
+  ]);
+
+  const { data: products, count } = productsResult;
+  const pageCount = Math.ceil(count / pageSize);
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-8">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold text-foreground mb-4">
-          MedCatalog
-        </h1>
-        <p className="text-lg text-muted-foreground mb-8">
-          Medical Product Price Comparison
-        </p>
-        <div className="p-6 bg-muted rounded-md border border-border">
-          <p className="text-sm text-muted-foreground">
-            Catalog coming soon. Configure Supabase credentials to get started.
-          </p>
+    <main className="min-h-screen bg-background">
+      <div className="flex">
+        <Suspense fallback={<div className="w-[280px] shrink-0 border-r border-border" />}>
+          <FilterSidebar>
+            <SearchInput />
+
+            <FilterSection title="Categories">
+              <CategoryTree categories={categories} />
+            </FilterSection>
+
+            <FilterSection title="Vendors">
+              <VendorFilter vendors={vendors} />
+            </FilterSection>
+
+            <FilterSection title="Materials">
+              <MaterialFilter materials={materials} />
+            </FilterSection>
+
+            <FilterSection title="Price Range">
+              <PriceRangeFilter />
+            </FilterSection>
+          </FilterSidebar>
+        </Suspense>
+
+        <div className="flex-1 p-6">
+          <Suspense fallback={<div className="animate-pulse bg-muted h-96 rounded-lg" />}>
+            <DataTable
+              columns={columns}
+              data={products}
+              pageCount={pageCount}
+              totalCount={count}
+              currentPage={page}
+              pageSize={pageSize}
+            />
+          </Suspense>
         </div>
       </div>
     </main>

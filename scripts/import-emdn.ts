@@ -190,7 +190,7 @@ async function main() {
   for (const cat of orthopedicCategories) {
     // Find parent
     const parentCode = findParentCode(cat.code, allOrthopedicCodes);
-    const parentId = parentCode ? codeToId.get(parentCode) : null;
+    const parentId = parentCode ? (codeToId.get(parentCode) ?? null) : null;
 
     // Build path
     const parentPath = parentCode ? pathMap.get(parentCode) : null;

@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "import:emdn": "tsx scripts/import-emdn.ts",
-    "seed": "tsx scripts/seed-data.ts"
+    "seed": "tsx scripts/seed-data.ts",
+    "enrich:emdn": "tsx scripts/enrich-csv-emdn.ts"
   },
   "dependencies": {
     "@google/genai": "^1.39.0",
@@ -34,6 +35,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.2.3",
     "eslint": "^9",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4",

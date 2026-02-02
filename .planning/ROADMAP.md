@@ -81,11 +81,12 @@ Plans:
   2. User sees similarity percentage and links to similar products
   3. Same/similar products from different vendors are grouped together
   4. User can see all vendor prices for a product at a glance
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 04-01: TBD
-- [ ] 04-02: TBD
+- [ ] 04-01-PLAN.md — Database migration (pg_trgm, RPC functions) and similarity Server Actions
+- [ ] 04-02-PLAN.md — Similar products warning in extraction preview
+- [ ] 04-03-PLAN.md — Price comparison table in product detail
 
 ## Progress
 
@@ -97,11 +98,12 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | 1. Foundation + Catalog | 3/3 | Complete | 2026-02-02 |
 | 2. Product Management | 4/4 | Complete | 2026-02-02 |
 | 3. AI Extraction | 4/4 | Complete | 2026-02-02 |
-| 4. Comparison Engine | 0/2 | Not started | - |
+| 4. Comparison Engine | 0/3 | Not started | - |
 
 ---
 *Roadmap created: 2026-02-02*
 *Phase 1 planned: 2026-02-02*
 *Phase 2 planned: 2026-02-02*
 *Phase 3 planned: 2026-02-02*
+*Phase 4 planned: 2026-02-02*
 *Depth: quick (3-5 phases)*

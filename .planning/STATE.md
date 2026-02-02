@@ -10,16 +10,16 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 ## Current Position
 
 Phase: 3 of 4 (AI Extraction)
-Plan: 2 of 4 complete
+Plan: 3 of 4 complete
 Status: In progress
-Last activity: 2026-02-02 - Completed 03-02-PLAN.md (Server Actions)
+Last activity: 2026-02-02 - Completed 03-03-PLAN.md (Extraction Components)
 
-Progress: [######░---] 64% (9/14 plans)
+Progress: [#######░--] 71% (10/14 plans)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
+- Total plans completed: 10
 - Average duration: 7 min
 - Total execution time: 1.2 hours
 
@@ -29,10 +29,10 @@ Progress: [######░---] 64% (9/14 plans)
 |-------|-------|-------|----------|
 | 01-foundation-catalog | 3 | 35 min | 12 min |
 | 02-product-management | 4 | 20 min | 5 min |
-| 03-ai-extraction | 2 | 5 min | 2.5 min |
+| 03-ai-extraction | 3 | 7 min | 2.3 min |
 
 **Recent Trend:**
-- Last 5 plans: 2 min, 3 min, 12 min, 3 min, 2 min
+- Last 5 plans: 3 min, 12 min, 3 min, 2 min, 2 min
 - Trend: Stable
 
 *Updated after each plan completion*
@@ -63,6 +63,8 @@ Recent decisions affecting current work:
 - EXTRACTION_MODEL = "gemini-3-flash-preview" as single source of truth
 - Server Action returns typed ExtractionResult with success/data/error for client handling
 - createProduct returns productId on success for UI feedback
+- Case-insensitive partial matching for vendor/material name-to-ID resolution
+- Show extracted raw text above dropdowns for user transparency
 
 ### Pending Todos
 
@@ -79,6 +81,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-02T15:21:41Z
-Stopped at: Completed 03-02-PLAN.md (Server Actions)
+Last session: 2026-02-02T15:25:23Z
+Stopped at: Completed 03-03-PLAN.md (Extraction Components)
 Resume file: None

@@ -32,6 +32,9 @@ export interface Product {
   vendor_id: string | null;
   emdn_category_id: string | null;
   material_id: string | null;
+  udi_di: string | null;
+  ce_marked: boolean;
+  mdr_class: 'I' | 'IIa' | 'IIb' | 'III' | null;
   created_at: string;
   updated_at: string;
 }

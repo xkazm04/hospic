@@ -30,6 +30,8 @@ const MOCK_PRODUCTS: ProductWithRelations[] = [
     udi_di: "00850123456789",
     ce_marked: true,
     mdr_class: "IIb",
+    manufacturer_name: "DePuy Synthes Inc.",
+    manufacturer_sku: "HS-001-TI",
     created_at: "2024-01-15",
     updated_at: "2024-01-15",
     vendor: MOCK_VENDORS[0],
@@ -48,6 +50,8 @@ const MOCK_PRODUCTS: ProductWithRelations[] = [
     udi_di: "00850987654321",
     ce_marked: true,
     mdr_class: "III",
+    manufacturer_name: "Stryker Corporation",
+    manufacturer_sku: "KRS-002-COCR",
     created_at: "2024-01-20",
     updated_at: "2024-01-20",
     vendor: MOCK_VENDORS[1],
@@ -131,9 +135,18 @@ export async function getProducts(params: GetProductsParams = {}): Promise<GetPr
     }
   }
 
-  // Apply category filter
+  // Apply category filter (includes all descendants)
   if (category) {
-    query = query.eq("emdn_category_id", category);
+    // Get all descendant category IDs using RPC function
+    const { data: categoryIds } = await supabase
+      .rpc("get_category_descendants", { parent_category_id: category });
+
+    if (categoryIds && categoryIds.length > 0) {
+      query = query.in("emdn_category_id", categoryIds);
+    } else {
+      // Fallback to exact match if RPC fails
+      query = query.eq("emdn_category_id", category);
+    }
   }
 
   // Apply material filter (comma-separated IDs)

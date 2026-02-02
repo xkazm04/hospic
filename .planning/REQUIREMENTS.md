@@ -83,34 +83,34 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| FOUN-01 | Phase ? | Pending |
-| FOUN-02 | Phase ? | Pending |
-| FOUN-03 | Phase ? | Pending |
-| DISP-01 | Phase ? | Pending |
-| DISP-02 | Phase ? | Pending |
-| DISP-03 | Phase ? | Pending |
-| DISP-04 | Phase ? | Pending |
-| DISP-05 | Phase ? | Pending |
-| PROD-01 | Phase ? | Pending |
-| PROD-02 | Phase ? | Pending |
-| PROD-03 | Phase ? | Pending |
-| PROD-04 | Phase ? | Pending |
-| PROD-05 | Phase ? | Pending |
-| EXTR-01 | Phase ? | Pending |
-| EXTR-02 | Phase ? | Pending |
-| EXTR-03 | Phase ? | Pending |
-| EXTR-04 | Phase ? | Pending |
-| EXTR-05 | Phase ? | Pending |
-| DUPL-01 | Phase ? | Pending |
-| DUPL-02 | Phase ? | Pending |
-| COMP-01 | Phase ? | Pending |
-| COMP-02 | Phase ? | Pending |
+| FOUN-01 | Phase 1 | Pending |
+| FOUN-02 | Phase 1 | Pending |
+| FOUN-03 | Phase 1 | Pending |
+| DISP-01 | Phase 1 | Pending |
+| DISP-02 | Phase 1 | Pending |
+| DISP-03 | Phase 1 | Pending |
+| DISP-04 | Phase 1 | Pending |
+| DISP-05 | Phase 1 | Pending |
+| PROD-01 | Phase 2 | Pending |
+| PROD-02 | Phase 2 | Pending |
+| PROD-03 | Phase 2 | Pending |
+| PROD-04 | Phase 2 | Pending |
+| PROD-05 | Phase 2 | Pending |
+| EXTR-01 | Phase 3 | Pending |
+| EXTR-02 | Phase 3 | Pending |
+| EXTR-03 | Phase 3 | Pending |
+| EXTR-04 | Phase 3 | Pending |
+| EXTR-05 | Phase 3 | Pending |
+| DUPL-01 | Phase 4 | Pending |
+| DUPL-02 | Phase 4 | Pending |
+| COMP-01 | Phase 4 | Pending |
+| COMP-02 | Phase 4 | Pending |
 
 **Coverage:**
 - v1 requirements: 22 total
-- Mapped to phases: 0
-- Unmapped: 22 (will be mapped during roadmap creation)
+- Mapped to phases: 22
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-02*
-*Last updated: 2026-02-02 after initial definition*
+*Last updated: 2026-02-02 after roadmap creation*

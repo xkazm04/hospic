@@ -35,6 +35,8 @@ export interface Product {
   udi_di: string | null;
   ce_marked: boolean;
   mdr_class: 'I' | 'IIa' | 'IIb' | 'III' | null;
+  manufacturer_name: string | null;
+  manufacturer_sku: string | null;
   created_at: string;
   updated_at: string;
 }

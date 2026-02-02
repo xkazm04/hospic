@@ -11,6 +11,8 @@ export const productSchema = z.object({
   udi_di: z.string().max(14, "UDI-DI max 14 characters").nullable().optional(),
   ce_marked: z.boolean().default(false),
   mdr_class: z.enum(["I", "IIa", "IIb", "III"]).nullable().optional(),
+  manufacturer_name: z.string().max(255, "Manufacturer name too long").nullable().optional(),
+  manufacturer_sku: z.string().max(100, "Manufacturer SKU too long").nullable().optional(),
 });
 
 export type ProductFormData = z.infer<typeof productSchema>;

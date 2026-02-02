@@ -10,24 +10,24 @@ Procurement can quickly compare prices for identical orthopedic products across 
 
 ## Requirements
 
-### Validated
+### Validated (v1.0)
 
-(None yet — ship to validate)
+- [x] User can upload txt/markdown vendor product sheet and have it analyzed by Gemini
+- [x] Gemini extracts structured data: name, description, SKU, pricing, specs, materials, regulatory info
+- [x] Gemini classifies product per EMDN (orthopedic subset)
+- [x] System warns user of duplicate/similar products in catalog
+- [x] User can review and edit extracted metadata before saving
+- [x] Products save to Supabase with vendor, pricing, material composition, EMDN classification
+- [x] Catalog displays as sortable, filterable, paginated table (20 items/page)
+- [x] User can view product detail
+- [x] User can edit product metadata
+- [x] User can delete products
+- [x] Same products from different vendors are grouped for price comparison
+- [x] UI is elegant, light-themed, with smooth animations (Motion)
 
 ### Active
 
-- [ ] User can upload txt/markdown vendor product sheet and have it analyzed by Gemini
-- [ ] Gemini extracts structured data: name, description, SKU, pricing, specs, materials, regulatory info
-- [ ] Gemini classifies product per EMDN (orthopedic subset)
-- [ ] System warns user of duplicate/similar products in catalog
-- [ ] User can review and edit extracted metadata before saving
-- [ ] Products save to Supabase with vendor, pricing, material composition, EMDN classification
-- [ ] Catalog displays as sortable, filterable, paginated table (20 items/page)
-- [ ] User can view product detail
-- [ ] User can edit product metadata
-- [ ] User can delete products
-- [ ] Same products from different vendors are grouped for price comparison
-- [ ] UI is elegant, light-themed, with smooth animations (Framer Motion)
+(Next milestone requirements go here)
 
 ### Out of Scope
 
@@ -65,10 +65,12 @@ Procurement can quickly compare prices for identical orthopedic products across 
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Warn on duplicates, don't block | Same product from different vendors is valid — that's the comparison use case | — Pending |
-| Server-side Gemini only | Keep API key secure, no client exposure | — Pending |
-| Filter EMDN to orthopedic | Full EMDN is too broad for this use case | — Pending |
-| Material = physical composition | Track what products are made of (titanium, PEEK), not component lists | — Pending |
+| Warn on duplicates, don't block | Same product from different vendors is valid — that's the comparison use case | ✓ v1.0 |
+| Server-side Gemini only | Keep API key secure, no client exposure | ✓ v1.0 |
+| Filter EMDN to orthopedic | Full EMDN is too broad for this use case | ✓ v1.0 |
+| Material = physical composition | Track what products are made of (titanium, PEEK), not component lists | ✓ v1.0 |
+| pg_trgm for similarity | Trigram matching handles word reordering better than LIKE | ✓ v1.0 |
+| Dark gray + green UI accents | Professional, minimal design with subtle green highlights | ✓ v1.0 |
 
 ---
-*Last updated: 2026-02-02 after initialization*
+*Last updated: 2026-02-02 after v1.0 milestone completion*

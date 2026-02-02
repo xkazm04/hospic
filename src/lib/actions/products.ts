@@ -32,6 +32,8 @@ export async function updateProduct(
     material_id: rawData.material_id || null,
     udi_di: rawData.udi_di || null,
     mdr_class: rawData.mdr_class || null,
+    manufacturer_name: rawData.manufacturer_name || null,
+    manufacturer_sku: rawData.manufacturer_sku || null,
   };
 
   // Validate with Zod
@@ -86,6 +88,8 @@ export async function createProduct(
     material_id: rawData.material_id || null,
     udi_di: rawData.udi_di || null,
     mdr_class: rawData.mdr_class || null,
+    manufacturer_name: rawData.manufacturer_name || null,
+    manufacturer_sku: rawData.manufacturer_sku || null,
   };
 
   // Validate with Zod

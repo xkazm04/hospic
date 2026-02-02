@@ -67,6 +67,30 @@ export function ProductDetail({ product }: ProductDetailProps) {
         </div>
       </div>
 
+      {/* Section 2.5: Manufacturer (only show if data exists) */}
+      {(product.manufacturer_name || product.manufacturer_sku) && (
+        <div className="pb-6 border-b border-border">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                Manufacturer
+              </p>
+              <p className="text-base mt-1">
+                {product.manufacturer_name || 'Not specified'}
+              </p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                Manufacturer SKU
+              </p>
+              <p className="text-base mt-1">
+                {product.manufacturer_sku || 'Not specified'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Section 3: Material */}
       <div className="pb-6 border-b border-border">
         <p className="text-sm font-medium text-muted-foreground uppercase tracking-wide">

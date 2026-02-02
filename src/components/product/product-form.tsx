@@ -44,6 +44,8 @@ export function ProductForm({
       udi_di: product.udi_di ?? undefined,
       ce_marked: product.ce_marked ?? false,
       mdr_class: product.mdr_class ?? undefined,
+      manufacturer_name: product.manufacturer_name ?? undefined,
+      manufacturer_sku: product.manufacturer_sku ?? undefined,
     },
   })
 
@@ -61,6 +63,8 @@ export function ProductForm({
       formData.append('udi_di', data.udi_di || '')
       formData.append('ce_marked', data.ce_marked ? 'true' : 'false')
       formData.append('mdr_class', data.mdr_class || '')
+      formData.append('manufacturer_name', data.manufacturer_name || '')
+      formData.append('manufacturer_sku', data.manufacturer_sku || '')
 
       const result = await updateProduct(product.id, formData)
 
@@ -137,6 +141,42 @@ export function ProductForm({
         {form.formState.errors.description && (
           <p className={errorClass}>
             {form.formState.errors.description.message}
+          </p>
+        )}
+      </div>
+
+      {/* Manufacturer Name */}
+      <div>
+        <label htmlFor="manufacturer_name" className={labelClass}>
+          Manufacturer
+        </label>
+        <input
+          id="manufacturer_name"
+          type="text"
+          {...form.register('manufacturer_name')}
+          className={inputClass}
+        />
+        {form.formState.errors.manufacturer_name && (
+          <p className={errorClass}>
+            {form.formState.errors.manufacturer_name.message}
+          </p>
+        )}
+      </div>
+
+      {/* Manufacturer SKU */}
+      <div>
+        <label htmlFor="manufacturer_sku" className={labelClass}>
+          Manufacturer SKU
+        </label>
+        <input
+          id="manufacturer_sku"
+          type="text"
+          {...form.register('manufacturer_sku')}
+          className={inputClass}
+        />
+        {form.formState.errors.manufacturer_sku && (
+          <p className={errorClass}>
+            {form.formState.errors.manufacturer_sku.message}
           </p>
         )}
       </div>

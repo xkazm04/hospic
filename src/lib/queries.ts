@@ -207,6 +207,22 @@ export async function getMaterials(): Promise<Material[]> {
   return data || [];
 }
 
+export async function getEMDNCategoriesFlat(): Promise<EMDNCategory[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("emdn_categories")
+    .select("*")
+    .order("code");
+
+  if (error) {
+    console.error("Error fetching EMDN categories (using mock data):", error.message);
+    return MOCK_CATEGORIES;
+  }
+
+  return data || [];
+}
+
 export interface CategoryNode extends EMDNCategory {
   children: CategoryNode[];
 }

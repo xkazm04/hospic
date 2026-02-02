@@ -1,13 +1,12 @@
 import { Suspense } from "react";
-import { getProducts, getVendors, getMaterials, getEMDNCategories } from "@/lib/queries";
-import { DataTable } from "@/components/table/data-table";
-import { columns } from "@/components/table/columns";
+import { getProducts, getVendors, getMaterials, getEMDNCategories, getEMDNCategoriesFlat } from "@/lib/queries";
 import { FilterSidebar, FilterSection } from "@/components/filters/filter-sidebar";
 import { SearchInput } from "@/components/filters/search-input";
 import { CategoryTree } from "@/components/filters/category-tree";
 import { VendorFilter } from "@/components/filters/vendor-filter";
 import { MaterialFilter } from "@/components/filters/material-filter";
 import { PriceRangeFilter } from "@/components/filters/price-range-filter";
+import { CatalogClient } from "@/components/catalog-client";
 
 interface HomeProps {
   searchParams: Promise<{
@@ -30,7 +29,7 @@ export default async function Home({ searchParams }: HomeProps) {
   const pageSize = 20;
 
   // Fetch data in parallel
-  const [productsResult, vendors, materials, categories] = await Promise.all([
+  const [productsResult, vendors, materials, categories, emdnCategoriesFlat] = await Promise.all([
     getProducts({
       page,
       pageSize,
@@ -46,6 +45,7 @@ export default async function Home({ searchParams }: HomeProps) {
     getVendors(),
     getMaterials(),
     getEMDNCategories(),
+    getEMDNCategoriesFlat(),
   ]);
 
   const { data: products, count } = productsResult;
@@ -78,9 +78,11 @@ export default async function Home({ searchParams }: HomeProps) {
 
         <div className="flex-1 p-6">
           <Suspense fallback={<div className="animate-pulse bg-muted h-96 rounded-lg" />}>
-            <DataTable
-              columns={columns}
-              data={products}
+            <CatalogClient
+              products={products}
+              vendors={vendors}
+              materials={materials}
+              emdnCategories={emdnCategoriesFlat}
               pageCount={pageCount}
               totalCount={count}
               currentPage={page}

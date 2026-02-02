@@ -55,9 +55,10 @@ interface DropdownMenuItemProps {
   children: ReactNode;
   onClick?: () => void;
   disabled?: boolean;
+  className?: string;
 }
 
-export function DropdownMenuItem({ children, onClick, disabled }: DropdownMenuItemProps) {
+export function DropdownMenuItem({ children, onClick, disabled, className }: DropdownMenuItemProps) {
   return (
     <button
       onClick={() => {
@@ -69,8 +70,8 @@ export function DropdownMenuItem({ children, onClick, disabled }: DropdownMenuIt
       className={`w-full px-3 py-2 text-left text-sm transition-colors ${
         disabled
           ? "text-muted-foreground cursor-not-allowed"
-          : "text-foreground hover:bg-muted"
-      }`}
+          : "hover:bg-muted"
+      } ${className || (disabled ? "" : "text-foreground")}`}
     >
       {children}
     </button>

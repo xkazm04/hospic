@@ -9,6 +9,7 @@ import {
   type ProductPriceComparison,
 } from '@/lib/actions/similarity'
 import { PriceComparisonTable } from '@/components/comparison/price-comparison-table'
+import { ResearchPrompt } from './research-prompt'
 
 interface ProductDetailProps {
   product: ProductWithRelations
@@ -134,6 +135,17 @@ export function ProductDetail({ product }: ProductDetailProps) {
           currentProductId={product.id}
           isLoading={comparisonLoading}
         />
+      </div>
+
+      {/* Section 7: Research EU Pricing */}
+      <div className="pt-2 border-t-2 border-blue-border">
+        <p className="text-sm font-medium text-blue-subtle uppercase tracking-wide mb-1">
+          Research EU Pricing
+        </p>
+        <p className="text-sm text-muted-foreground mb-3">
+          Generate a prompt to find EU vendors and pricing via Perplexity AI
+        </p>
+        <ResearchPrompt product={product} />
       </div>
     </div>
   )

@@ -9,12 +9,12 @@ See: .planning/PROJECT.md (updated 2026-02-02)
 
 ## Current Position
 
-Phase: 5 of 7 (Schema & Navigation) - Not Started
-Plan: —
-Status: Ready to plan Phase 5
-Last activity: 2026-02-02 — Roadmap created
+Phase: 5 of 7 (Schema & Navigation) - In Progress
+Plan: 1 of 2 complete
+Status: Completed 05-01 (Manufacturer Fields)
+Last activity: 2026-02-02 — Completed 05-01-PLAN.md
 
-Progress: [░░░░░░░░░░] 0% (0/3 phases)
+Progress: [###.......] 33% (1/3 phases)
 
 ## Milestone History
 
@@ -36,6 +36,12 @@ Key v1.0 decisions (still applicable):
 - Use pg_trgm extension for trigram similarity
 - Default threshold 0.3 for duplicate warning, 0.5 for price comparison
 
+v1.1 decisions (Phase 5):
+
+- Nullable manufacturer columns for backward compatibility
+- Partial index on manufacturer_sku (WHERE NOT NULL)
+- Conditional manufacturer section display (only when data exists)
+
 ### Technical Debt
 
 - Permissive RLS policies need tightening when auth is added
@@ -48,12 +54,12 @@ CSV file `docs/BornDigital DATA(SVK).csv`:
 - 947 unique products by SKU
 - 2-3 suppliers (Zimmer Slovakia, Enovis Slovakia)
 - 16 manufacturers (Zimmer Inc, Biomet, etc.)
-- Schema gap: need manufacturer + manufacturer_sku fields
+- Schema gap: RESOLVED - manufacturer + manufacturer_sku fields added in 05-01
 
 ### Pending Todos
 
 - User must create Supabase project and set env vars
-- User must run database migrations in Supabase SQL Editor
+- User must run database migrations in Supabase SQL Editor (including 004_manufacturer_fields.sql)
 - User must add SUPABASE_SERVICE_ROLE_KEY and GEMINI_API_KEY to .env.local
 - User must run `npm run import:emdn` then `npm run seed`
 
@@ -64,5 +70,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-02
-Stopped at: Defining v1.1 requirements
+Stopped at: Completed 05-01-PLAN.md (Manufacturer Fields)
 Resume file: None

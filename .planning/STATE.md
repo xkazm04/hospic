@@ -2,88 +2,55 @@
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-02-02)
+See: .planning/PROJECT.md (updated 2026-02-05)
 
 **Core value:** Procurement can quickly compare prices for identical orthopedic products across multiple vendors
-**Current focus:** Milestone v1.2 — Chatbot Interface (Experimental)
+**Current focus:** Milestone v1.2 - Chatbot Interface (Phase 8: Streaming Foundation)
 
 ## Current Position
 
-Phase: Not started (defining requirements)
-Plan: —
-Status: Defining requirements for v1.2
-Last activity: 2026-02-05 — Milestone v1.2 started
+Phase: 8 of 12 (Streaming Foundation)
+Plan: Not started
+Status: Ready to plan
+Last activity: 2026-02-05 - Roadmap created for v1.2 (5 phases, 26 requirements)
 
-Progress: [          ] 0% (0/? phases complete)
+Progress: [          ] 0% (0/5 phases complete in v1.2)
 
 ## Milestone History
 
 | Version | Phases | Plans | Shipped |
 |---------|--------|-------|---------|
 | v1.0    | 4      | 14    | 2026-02-02 |
-| v1.1    | 3      | 6     | 2026-02-02 |
+| v1.1    | 3      | 7     | 2026-02-02 |
+| v1.2    | 5      | TBD   | In progress |
 
 ## Accumulated Context
 
 ### Decisions
 
 Decisions are logged in PROJECT.md Key Decisions table.
-Key v1.0 decisions (still applicable):
+Key decisions still applicable:
 
 - Tailwind v4 with @theme CSS config (no tailwind.config.js)
 - Next.js 15 async cookies() API for Supabase server client
-- SKU not unique - same SKU can exist from multiple vendors
-- Filter EMDN to orthopedic categories only (P09, P10)
 - Use pg_trgm extension for trigram similarity
 - Default threshold 0.3 for duplicate warning, 0.5 for price comparison
 
-v1.1 decisions (Phase 5):
+v1.2 research decisions (pending implementation):
 
-- Nullable manufacturer columns for backward compatibility
-- Partial index on manufacturer_sku (WHERE NOT NULL)
-- Conditional manufacturer section display (only when data exists)
-- Use path prefix LIKE pattern for descendant lookup (efficient with text_pattern_ops index)
-- RPC returns category IDs as array, query uses IN clause for filtering
-- Breadcrumb shows above tree when filter active, helps user understand context
-
-v1.1 decisions (Phase 6):
-
-- PapaParse 5.5.3 for CSV parsing (handles BOM, UTF-8 by default)
-- Preview mode with default 10 rows for user confirmation before full parse
-- Column mapping validates required fields (name, sku) separately from row data
-- Deduplication by (sku + vendor_id) pair, not SKU alone
-- Batch processing at 100 rows for import to avoid timeout/memory issues
-- Auto-detect CSV columns by case-insensitive header matching with common aliases
-- Validation status enum: valid | update | error with color-coded display
-- Wizard step flow: vendor -> upload -> mapping -> validation -> importing -> summary
-- Vendor selection required first since deduplication is per-vendor
-
-v1.1 decisions (Phase 7):
-
-- Blue color theme for research section to distinguish from green price comparison
-- Open base Perplexity URL rather than pre-filling query (prompt may exceed URL length limits)
-- Truncate description to 200 chars in prompt to keep it concise
+- Vercel AI SDK (`ai`, `@ai-sdk/react`, `@ai-sdk/google`) for streaming and tool calling
+- Keep existing `@google/genai` extraction client separate from chat
+- Read-only chat design (no mutations via chatbot)
+- SSE with proper AbortController cleanup to prevent memory leaks
 
 ### Technical Debt
 
 - Permissive RLS policies need tightening when auth is added
 - Manual migration execution required (no automated migration runner)
 
-### Data Analysis (v1.1)
-
-CSV file `docs/BornDigital DATA(SVK).csv`:
-- 10,293 rows (transaction-level, many duplicates)
-- 947 unique products by SKU
-- 2-3 suppliers (Zimmer Slovakia, Enovis Slovakia)
-- 16 manufacturers (Zimmer Inc, Biomet, etc.)
-- Schema gap: RESOLVED - manufacturer + manufacturer_sku fields added in 05-01
-
 ### Pending Todos
 
-- User must create Supabase project and set env vars
-- User must run database migrations in Supabase SQL Editor (including 004_manufacturer_fields.sql, 005_category_descendants.sql)
-- User must add SUPABASE_SERVICE_ROLE_KEY and GEMINI_API_KEY to .env.local
-- User must run `npm run import:emdn` then `npm run seed`
+None.
 
 ### Blockers/Concerns
 
@@ -92,6 +59,6 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-05
-Stopped at: Milestone v1.2 initialization (defining requirements)
+Stopped at: Roadmap created for v1.2 milestone
 Resume file: None
-Next action: Complete requirements and roadmap for v1.2 Chatbot Interface
+Next action: `/gsd:plan-phase 8` to plan Streaming Foundation

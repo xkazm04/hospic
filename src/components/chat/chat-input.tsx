@@ -1,14 +1,17 @@
 'use client';
 
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { ArrowUp } from 'lucide-react';
+import { ArrowUp, Trash2 } from 'lucide-react';
+import { CHAT_FULL_MESSAGE } from '@/lib/chat/constants';
 
 interface ChatInputProps {
   onSubmit: (text: string) => void;
   disabled?: boolean;
+  isChatFull?: boolean;
+  onClearChat?: () => void;
 }
 
-export function ChatInput({ onSubmit, disabled }: ChatInputProps) {
+export function ChatInput({ onSubmit, disabled, isChatFull, onClearChat }: ChatInputProps) {
   const [value, setValue] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -45,6 +48,25 @@ export function ChatInput({ onSubmit, disabled }: ChatInputProps) {
 
   const showSendButton = value.trim().length > 0;
 
+  // When chat is full, show message and clear button instead of input
+  if (isChatFull) {
+    return (
+      <div className="border-t border-border px-4 py-3">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-sm text-muted-foreground">{CHAT_FULL_MESSAGE}</span>
+          {onClearChat && (
+            <button
+              onClick={onClearChat}
+              className="px-3 py-1.5 text-sm border border-border rounded-lg hover:bg-muted transition-colors"
+            >
+              Clear chat
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="border-t border-border px-4 py-3">
       <div className="flex items-end gap-2">
@@ -59,6 +81,17 @@ export function ChatInput({ onSubmit, disabled }: ChatInputProps) {
           className="flex-1 resize-none overflow-hidden bg-muted rounded-lg px-3 py-2.5 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/50 disabled:opacity-50"
           style={{ maxHeight: '150px' }}
         />
+        {onClearChat && (
+          <button
+            type="button"
+            onClick={onClearChat}
+            className="p-2.5 text-muted-foreground hover:text-foreground rounded-lg hover:bg-muted transition-colors shrink-0"
+            title="Clear chat"
+            aria-label="Clear chat"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        )}
         {showSendButton && (
           <button
             onClick={handleSubmit}

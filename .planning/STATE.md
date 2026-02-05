@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-05)
 
 **Core value:** Procurement can quickly compare prices for identical orthopedic products across multiple vendors
-**Current focus:** Milestone v1.2 - Chatbot Interface (Phase 8: Streaming Foundation)
+**Current focus:** Milestone v1.2 - Chatbot Interface (Phase 9: Catalog Search Tools)
 
 ## Current Position
 
-Phase: 8 of 12 (Streaming Foundation) ✓ COMPLETE
-Plan: 2 of 2 complete
-Status: Phase complete, verified
-Last activity: 2026-02-05 - Phase 8 verified (08-VERIFICATION.md)
+Phase: 9 of 12 (Catalog Search Tools)
+Plan: 1 of 2 complete
+Status: In progress
+Last activity: 2026-02-05 - Completed 09-01-PLAN.md (Tool Definitions)
 
-Progress: [##########] 100% (2/2 plans complete in Phase 8)
+Progress: [#####-----] 50% (1/2 plans complete in Phase 9)
 
 ## Milestone History
 
@@ -51,6 +51,12 @@ v1.2 decisions (implemented in 08-02):
 - UIMessage.parts array extraction (AI SDK v6 uses parts not content string)
 - sendMessage({ text }) signature (not { content })
 
+v1.2 decisions (implemented in 09-01):
+
+- Import from 'zod/v4' for AI SDK tool inputSchema (AI SDK 6.x uses zod/v4 internally)
+- Server-side tool execute for read-only operations
+- stepCountIs(3) for multi-step execution (search -> compare -> synthesize)
+
 ### Technical Debt
 
 - Permissive RLS policies need tightening when auth is added
@@ -66,7 +72,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-05T10:25:00Z
-Stopped at: Phase 8 complete and verified
+Last session: 2026-02-05T12:01:00Z
+Stopped at: Completed 09-01-PLAN.md
 Resume file: None
-Next action: Plan Phase 9 (Catalog Search Tools) or discuss phase first
+Next action: Execute 09-02-PLAN.md (Tool Result Rendering)

@@ -65,10 +65,11 @@ Plans:
   2. Long conversations do not exhaust token limits or cause errors
   3. API failures show friendly fallback messages instead of raw errors
   4. Rate limit and timeout errors are handled with clear user guidance
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 10-01: TBD
+- [ ] 10-01-PLAN.md - Error classification infrastructure (utilities + API route error handling)
+- [ ] 10-02-PLAN.md - Error UI and message limits (ErrorBubble + ChatPanel wiring + clear chat)
 
 ### Phase 11: External Web Search
 **Goal**: Users can discover EU market alternatives not in the catalog via web search
@@ -106,7 +107,7 @@ Plans:
 |-------|-----------|----------------|--------|-----------|
 | 8. Streaming Foundation | v1.2 | 2/2 | Complete | 2026-02-05 |
 | 9. Catalog Search Tools | v1.2 | 2/2 | Complete | 2026-02-05 |
-| 10. Context and Error Handling | v1.2 | 0/? | Not started | - |
+| 10. Context and Error Handling | v1.2 | 0/2 | Not started | - |
 | 11. External Web Search | v1.2 | 0/? | Not started | - |
 | 12. UI Polish and Integration | v1.2 | 0/? | Not started | - |
 

@@ -86,11 +86,22 @@ export function MessageList({
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isStreaming]);
 
+  // Helper to check if a message has a completed tool output of the same type
+  // Used to hide loading spinners when a later tool call has output
+  const hasCompletedToolOfType = (parts: UIMessage['parts'], toolType: string): boolean => {
+    return parts.some(p => {
+      if (p.type !== toolType) return false;
+      const tp = p as ToolPartBase & { output?: unknown };
+      return tp.state === 'output-available' && tp.output !== undefined;
+    });
+  };
+
   // Render a single message part based on its type
   const renderPart = (
     part: UIMessage['parts'][number],
     partIndex: number,
-    messageRole: UIMessage['role']
+    messageRole: UIMessage['role'],
+    allParts: UIMessage['parts']
   ) => {
     // Type guard to check for tool parts
     const isToolPart = (p: unknown): p is ToolPartBase =>
@@ -134,6 +145,10 @@ export function MessageList({
             </div>
           );
         }
+        // Hide loading spinner if another tool call of same type has output
+        if (hasCompletedToolOfType(allParts, 'tool-searchProducts')) {
+          return null;
+        }
         return <LoadingSpinner key={toolPart.toolCallId} text="Searching catalog..." />;
       }
 
@@ -142,6 +157,9 @@ export function MessageList({
         const toolPart = part as ToolPartBase & { output?: ComparePricesOutput };
         if (toolPart.state === 'output-available' && toolPart.output) {
           return <ComparisonTable key={toolPart.toolCallId} products={toolPart.output.products} />;
+        }
+        if (hasCompletedToolOfType(allParts, 'tool-comparePrices')) {
+          return null;
         }
         return <LoadingSpinner key={toolPart.toolCallId} text="Comparing prices..." />;
       }
@@ -158,6 +176,9 @@ export function MessageList({
             />
           );
         }
+        if (hasCompletedToolOfType(allParts, 'tool-suggestCategories')) {
+          return null;
+        }
         return <LoadingSpinner key={toolPart.toolCallId} text="Finding categories..." />;
       }
 
@@ -167,6 +188,9 @@ export function MessageList({
 
         // Loading state
         if (toolPart.state !== 'output-available' || !toolPart.output) {
+          if (hasCompletedToolOfType(allParts, 'tool-searchExternalProducts')) {
+            return null;
+          }
           return (
             <LoadingSpinner
               key={toolPart.toolCallId}
@@ -232,7 +256,7 @@ export function MessageList({
         messages.map((message) => (
           <div key={message.id}>
             {message.parts.map((part, partIndex) =>
-              renderPart(part, partIndex, message.role)
+              renderPart(part, partIndex, message.role, message.parts)
             )}
           </div>
         ))

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useChat } from '@ai-sdk/react';
 import { MessageList } from './message-list';
@@ -15,11 +15,31 @@ interface ChatPanelProps {
   isOpen: boolean;
 }
 
+// Extract last shown products from messages for context
+function getLastSearchProducts(messages: ReturnType<typeof useChat>['messages']): ProductWithRelations[] {
+  // Walk messages backwards to find the last searchProducts output
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const message = messages[i];
+    for (const part of message.parts) {
+      if (part.type === 'tool-searchProducts') {
+        const toolPart = part as { state: string; output?: { products: ProductWithRelations[] } };
+        if (toolPart.state === 'output-available' && toolPart.output?.products) {
+          return toolPart.output.products;
+        }
+      }
+    }
+  }
+  return [];
+}
+
 export function ChatPanel({ isOpen }: ChatPanelProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { messages, sendMessage, status, stop, error, setMessages, regenerate, clearError } = useChat();
   const [retryAttempted, setRetryAttempted] = useState(false);
+
+  // Extract context from last search for quick actions
+  const lastProducts = useMemo(() => getLastSearchProducts(messages), [messages]);
 
   const isStreaming = status === 'streaming';
   const showTypingIndicator = status === 'submitted';
@@ -113,15 +133,31 @@ export function ChatPanel({ isOpen }: ChatPanelProps) {
   };
 
   const handleCompareResults = () => {
-    sendMessage({ text: 'Compare prices for these products' });
+    // Include product names for context
+    if (lastProducts.length > 0) {
+      const productNames = lastProducts.slice(0, 3).map(p => p.name).join(', ');
+      sendMessage({ text: `Compare prices for these products: ${productNames}` });
+    } else {
+      sendMessage({ text: 'Compare prices for the products shown above' });
+    }
   };
 
   const handleShowMore = () => {
-    sendMessage({ text: 'Show more results' });
+    sendMessage({ text: 'Show more results from the previous search' });
   };
 
   const handleFilterVendor = () => {
-    sendMessage({ text: 'Filter by vendor' });
+    // Include vendor names from last products for context
+    if (lastProducts.length > 0) {
+      const vendors = [...new Set(lastProducts.map(p => p.vendor?.name).filter(Boolean))];
+      if (vendors.length > 0) {
+        sendMessage({ text: `Filter by vendor. The previous results included: ${vendors.join(', ')}. Which vendor do you want?` });
+      } else {
+        sendMessage({ text: 'Filter the previous results by vendor' });
+      }
+    } else {
+      sendMessage({ text: 'Filter by vendor' });
+    }
   };
 
   return (

@@ -1,430 +1,275 @@
 # Project Research Summary
 
-**Project:** Medical Product Catalog with AI Classification
-**Domain:** Healthcare Procurement / Medical Device Management
-**Researched:** 2026-02-02
-**Confidence:** HIGH
+**Project:** MedCatalog v1.2 Chatbot Interface
+**Domain:** Conversational AI for Medical Device Product Search
+**Researched:** 2026-02-05
+**Confidence:** MEDIUM-HIGH
 
 ## Executive Summary
 
-This is a specialized B2B medical product catalog system focused on orthopedic devices, combining procurement efficiency with AI-powered data extraction and regulatory compliance (EMDN classification). The recommended approach uses Next.js 15.5 with Supabase for rapid development, Gemini 3 Flash Preview for intelligent document extraction, and a human-in-the-loop review system to ensure data accuracy. The core differentiator is dramatically reducing catalog population time from months to weeks by automating vendor spreadsheet parsing while maintaining medical-grade data quality.
+MedCatalog v1.2 adds a floating chatbot widget that enables natural language queries against the existing orthopedic medical device catalog, with Gemini-powered web search for discovering EU market alternatives not in the database. The recommended approach uses **Vercel AI SDK** (`ai`, `@ai-sdk/react`, `@ai-sdk/google`) rather than extending the existing `@google/genai` extraction client. This separation is deliberate: the AI SDK provides streaming protocol, React hooks (`useChat`), and tool calling abstractions that would require 60% more boilerplate to implement manually. The existing extraction pipeline remains untouched.
 
-The key architectural insight is treating this as three distinct systems: (1) an extraction pipeline that converts unstructured vendor data into structured catalog entries with confidence scoring, (2) a canonical product model that enables multi-vendor price comparison through intelligent duplicate detection, and (3) a compliance layer that validates EMDN classifications against the official EU registry. This separation ensures each component can evolve independently while preventing the most common failure mode—trusting LLM output without validation.
+The architecture leverages existing infrastructure extensively. Tool functions wrap `getProducts()`, `findSimilarProducts()`, and `getProductPriceComparison()` directly. The chat widget integrates into `CatalogClient` as a floating panel. The read-only design (no mutations) keeps scope manageable while delivering the core differentiators: inline price comparison tables, interactive quick-action buttons, and web-grounded alternative discovery.
 
-The primary risk is hallucination in medical data extraction (15-40% error rates on clinical tasks), mitigated through field-level confidence scoring, mandatory human review for low-confidence extractions, and explicit source traceability showing where each data point was extracted from. Secondary risks include EMDN code obsolescence (May 2026 EUDAMED deadline approaching), multi-vendor product identity confusion, and reviewer fatigue from poorly designed approval workflows. All are addressable through proper schema design and UX patterns established in Phase 1.
+Key risks center on streaming infrastructure reliability and tool calling correctness. SSE connection cleanup is critical -- memory leaks from unaborted streams under rapid open/close cycles can crash production servers. Gemini's parallel function call response ordering requires careful handling: results must be batched, not sent piecemeal. The existing circuit breaker (50 req/10s) may trip during normal chat usage, requiring either higher limits for chat context or a separate circuit.
+
+---
 
 ## Key Findings
 
-### Recommended Stack
+### Recommended Stack Additions
 
-**Modern Next.js stack optimized for rapid medical B2B development:** Next.js 15.5 with App Router provides server-side rendering for the catalog table, Server Actions for mutations, and Route Handlers for Gemini API calls. Supabase delivers managed PostgreSQL with row-level security for multi-tenant isolation, built-in authentication, and storage for vendor spreadsheets. Gemini 3 Flash Preview balances intelligence and speed for classification tasks at lower cost than GPT-4.
+The chatbot requires 5 new npm packages while reusing existing infrastructure (Supabase, Radix UI, TanStack Table patterns, Tailwind).
 
-**Core technologies:**
-- **Next.js 15.5**: Full-stack framework with App Router, Server Actions eliminate API boilerplate, battle-tested for production
-- **Supabase**: Managed PostgreSQL + Auth + Storage, row-level security for data isolation, eliminates DevOps overhead
-- **Gemini 3 Flash Preview**: LLM for extraction and classification, Pro-level intelligence at Flash pricing, supports thinking_level for reasoning
-- **TypeScript 5.5+**: Required by Zod 4, provides compile-time safety for medical data structures
-- **Tailwind CSS 4.x**: 5x faster builds with CSS-first config, required by shadcn/ui component library
-- **Zod 4.x**: Schema validation shared client/server, TypeScript-first, validates LLM outputs
-- **React Hook Form + @hookform/resolvers**: Minimal re-renders, integrates with Server Actions for form handling
-- **shadcn/ui**: Copy-paste components you own, built on Radix UI + Tailwind, Server Components compatible
-- **xlsx (SheetJS)**: Comprehensive Excel parser for vendor spreadsheets, handles .xlsx/.xls/.csv
-- **TanStack Query 5.x**: Cache management for hybrid SSR + client data fetching
+| Library | Version | Purpose | Why Recommended |
+|---------|---------|---------|-----------------|
+| `ai` | 6.0.x | Vercel AI SDK core | `streamText`, `UIMessage`, streaming protocol |
+| `@ai-sdk/react` | 3.0.x | React hooks | `useChat` manages messages, streaming state, tool calls |
+| `@ai-sdk/google` | 3.0.x | Gemini provider | Unified API with built-in Google Search grounding |
+| `react-markdown` | 9.x | Markdown rendering | Renders AI responses with proper formatting |
+| `remark-gfm` | 4.x | GFM support | Enables tables in chat responses |
 
-**Critical version requirements:**
-- TypeScript 5.5+ required by Zod 4
-- Next.js 15.5 specifically (not 16) - better stability for production
-- @supabase/ssr 0.5.x for App Router auth (replaces deprecated auth-helpers)
-- Avoid @google/generative-ai (deprecated), use @google/genai 1.37.x
+**Estimated bundle impact:** ~45KB gzipped (AI SDK is tree-shakeable)
+
+**What NOT to add:**
+- LangChain (overkill for single-model chat)
+- assistant-ui (adds persistence complexity not needed)
+- WebSocket transport (SSE is sufficient)
+- Separate chat database (messages are ephemeral)
 
 ### Expected Features
 
-**This is a procurement tool with regulatory requirements, not a consumer e-commerce site.** The table-stakes features are enterprise data table functionality (sorting, filtering, pagination, export) plus EMDN classification display for EU MDR compliance. The killer differentiator is AI-powered extraction from vendor documents with human review—reducing 4-6 month manual data entry to weeks.
+**Must Have (Table Stakes):**
 
-**Must have (table stakes):**
-- Product listing table with multi-column sorting and frozen headers
-- Faceted filtering by vendor, EMDN category, price range, material
-- Full-text search across product names, descriptions, SKUs
-- Pagination with configurable page size (10/20/50/100)
-- EMDN classification display with hierarchical code visualization
-- Multi-vendor price comparison for procurement decision support
-- Export to CSV/Excel for ERP integration
-- Product detail view with complete specs and regulatory info
+| Feature | Complexity | Notes |
+|---------|------------|-------|
+| Natural language product search | MEDIUM | Translate NL to existing filter params |
+| Show search results as cards | LOW | Reuse product data structure |
+| Filter by category/vendor/price | LOW | Wraps existing `getProducts()` |
+| Suggested starter prompts | LOW | 3-5 examples visible on open |
+| Quick action buttons | LOW | "Compare prices", "Show more", "Filter by vendor" |
+| Conversation context | MEDIUM | Track current filters, last search |
+| Inline price comparison tables | MEDIUM | Leverages existing `getProductPriceComparison()` RPC |
 
-**Should have (competitive advantage):**
-- AI-powered data extraction from vendor text/markdown files
-- Real-time extraction preview with confidence scores
-- Inline editing of extracted data before commit
-- Duplicate/similar product detection with similarity warnings
-- AI-assisted EMDN classification with top-N suggestions
-- Saved filter presets for repeated searches
-- Audit trail for regulatory compliance tracking
-- Bulk import with validation and field mapping
+**Should Have (Differentiators):**
 
-**Defer (v2+):**
-- Real-time vendor catalog sync (API complexity, inconsistent vendor APIs)
-- Full ERP/EHR integration (scope explosion, each hospital different)
-- Multi-currency real-time conversion (exchange rate complexity)
-- Advanced analytics dashboard (need data first)
-- Vendor management/scoring (different problem domain)
-- Multi-language localization (EMDN already standardized in EU)
-- Complex role-based permissions (premature for prototype)
-- Offline mode (adds sync complexity, not needed for B2B desktop use)
+| Feature | Complexity | Notes |
+|---------|------------|-------|
+| "Find alternatives" via web search | HIGH | Google Search grounding via Gemini |
+| EMDN category suggestions | MEDIUM | When query is ambiguous, suggest relevant categories |
+| "Open in catalog" button | LOW | Apply chat-defined filters to main view |
+| Interactive product cards | MEDIUM | Rich cards with action buttons |
+
+**Defer to v1.3+:**
+- Voice input (nice-to-have, not blocking)
+- Multi-product comparison widget (complex UI)
+- Chat history persistence (adds storage complexity)
+- Full-page chat replacement (chat supplements, doesn't replace catalog)
 
 ### Architecture Approach
 
-**Three-layer architecture with clear separation between AI operations (Route Handlers), mutations (Server Actions), and presentation (Server Components for SSR + Client Components for interactivity).** This enables keeping Gemini API keys server-side while allowing progressive enhancement and type-safe mutations. URL-based state for the catalog table ensures shareability and SSR while avoiding client-side loading spinners.
+The chatbot integrates into the existing Next.js 16 App Router architecture using a **Route Handler** (`/api/chat/route.ts`) for streaming, the **Vercel AI SDK** for unified streaming and tool calling, and **client components** with the `useChat` hook for real-time UI updates.
 
-**Major components:**
-1. **File Upload + Review Flow** — Client Component handles file selection, calls /api/extract route, displays AI extraction results for user review/editing
-2. **Catalog Table** — Server Component with URL-based pagination/filtering/sorting, fetches data server-side for instant rendering, no loading states
-3. **Product CRUD** — Server Actions for all mutations (create/update/delete), validated with Zod schemas, optimistic UI updates
-4. **Gemini Service Layer** — Route Handlers (/api/extract, /api/classify) wrap Gemini API calls, handle retry logic, validate structured outputs
-5. **EMDN Service** — Manages local EMDN code registry synced from EC Excel, provides search/lookup, validates AI classifications
-6. **Canonical Product Model** — Three-tier schema (Canonical Product -> Vendor Listings -> Pricing) enabling duplicate detection before insert and multi-vendor comparison
+**Component Structure:**
 
-**Critical patterns:**
-- **Separate Supabase clients:** Browser client vs server client required for proper auth in App Router
-- **Server Actions for mutations, Route Handlers for LLM ops:** Keeps API keys secure, allows HTTP caching for LLM responses
-- **URL search params for table state:** Enables SSR, shareability, browser back button
-- **Confidence-based review routing:** Only surface low-confidence extractions for human review
+```
+page.tsx (Server Component)
+  +-- CatalogClient (Client)
+        +-- DataTable, FilterSidebar (existing)
+        +-- ChatWidget (NEW)
+              +-- ChatButton (floating trigger)
+              +-- ChatPanel (slide-out)
+                    +-- MessageList
+                    +-- ChatInput
+```
+
+**Integration Points:**
+
+| Existing Component | Chat Usage |
+|-------------------|------------|
+| `getProducts()` | Wrapped by `searchCatalog` tool |
+| `findSimilarProducts()` | Wrapped by `findSimilar` tool |
+| `getProductPriceComparison()` | Wrapped by `comparePrices` tool |
+| `ProductWithRelations` type | Used in tool response formatting |
+| Radix UI Dialog | Chat widget container |
+| TanStack Table patterns | Inline comparison tables |
+
+**New Routes:**
+- `/api/chat` - Streaming chat endpoint
+
+**New Components:**
+- `components/chat/chat-widget.tsx` - Container with open/close state
+- `components/chat/chat-panel.tsx` - Slide-out panel
+- `components/chat/chat-message.tsx` - Renders based on `parts` type
+- `components/chat/chat-input.tsx` - Input with send button
+- `components/chat/tool-results/product-card.tsx` - Single product display
+- `components/chat/tool-results/product-table.tsx` - Product list display
 
 ### Critical Pitfalls
 
-1. **Trusting LLM extraction without confidence scoring** — Medical LLMs hallucinate 15-40% on clinical tasks. Implement field-level confidence scores, set thresholds (<0.8 requires review), show source document highlighting, never auto-commit low-confidence data. Phase 1 requirement.
+| # | Pitfall | Prevention | Phase |
+|---|---------|------------|-------|
+| 1 | **SSE Memory Leaks** - Unclean connection cleanup causes memory exhaustion under load | Handle `req.signal.abort` on server, cleanup `AbortController` on client unmount | Phase 1 |
+| 2 | **Parallel Function Call Ordering** - Gemini parallel tool calls require batched responses, not piecemeal | Use `Promise.all()` to execute all calls, send results together | Phase 2 |
+| 3 | **Function Calling Mode Mismatch** - `ANY` mode forces tool calls even for simple questions | Use `AUTO` mode (default) to let model decide when tools are needed | Phase 2 |
+| 4 | **Context Window Exhaustion** - Chat history accumulates until limits or costs explode | Implement sliding window with summarization, don't include full tool responses in history | Phase 3 |
+| 5 | **Circuit Breaker Trips** - Existing 50 req/10s limit may trip during normal chat usage | Higher limits for chat context, or separate circuit with chat-appropriate thresholds | Phase 2 |
 
-2. **EMDN classification without validation hierarchy** — EMDN codes change without notification, LLMs generate plausible but non-existent codes. Maintain local EMDN registry synced from EC, implement three-tier classification (LLM suggestion -> validation -> human confirm), flag "99-other" codes for review. Phase 2 requirement.
+**Additional Moderate Pitfalls:**
+- Tool schema drift from database schema (match `GetProductsParams` exactly)
+- Z-index conflicts with existing modals (use Radix Portal, establish z-index scale)
+- Existing Gemini client conflict (extend `lib/gemini/client.ts`, don't duplicate)
 
-3. **Schema design without multi-vendor product identity** — Same product from different vendors becomes duplicates. Design schema with Canonical Product -> Vendor Listings separation, implement duplicate detection BEFORE insert, use multimodal embeddings for similarity. Phase 1 schema design.
-
-4. **Human review UI causing reviewer fatigue** — Poor UX leads to rubber-stamping approvals. Confidence-based routing (only review below threshold), show clear extraction rationale with source location, batch operations for high-confidence items, active learning from corrections. Phase 3 UX design.
-
-5. **Gemini API output assumptions** — Complex schemas cause 400 errors, optional fields get skipped. Keep schemas flat, set nullable:true explicitly, use propertyOrdering, post-process with Zod validation, abstract Gemini behind interface for model migration. Phase 1 extraction pipeline.
-
-**Additional critical warnings:**
-- **RLS policies using user_metadata**: Users can modify their tenant_id and access other tenants' data. Always use app_metadata for tenant isolation.
-- **No extraction audit trail**: Medical device regulations require full data traceability. Audit trail is not optional.
-- **Material declarations**: LLM errors here have patient safety implications (latex-free, MRI-safe). Human verification required.
-- **Synchronous extraction**: UI freezes during upload. Background jobs with status polling required for any production use.
+---
 
 ## Implications for Roadmap
 
-Based on research, suggested phase structure:
+Based on dependencies discovered in research, the chatbot milestone naturally decomposes into 5 sequential phases:
 
-### Phase 1: Foundation + Core Data Model
-**Rationale:** Must establish database schema with canonical product model and RLS before any data ingestion. Getting multi-tenant isolation and duplicate detection architecture wrong requires expensive migration later. Schema mistakes in medical data systems are nearly impossible to fix post-launch.
+### Phase 1: Streaming Foundation
+**Rationale:** Core infrastructure must work before any features. Streaming reliability is the foundation for everything else.
+**Delivers:** Basic chat widget with streaming text responses (no tools yet)
+**Addresses:** Table stakes (chat widget, basic conversation)
+**Avoids:** SSE Memory Leaks (Pitfall 1) by implementing proper cleanup from the start
+**Estimated effort:** 2-3 hours
 
-**Delivers:**
-- Supabase project with three-tier product schema (Canonical Products, Vendor Listings, Pricing)
-- Row-level security policies using app_metadata for tenant isolation
-- EMDN codes table seeded from EC Excel download
-- Zod validation schemas for all domain entities
-- Supabase client utilities (separate browser/server clients)
-- Basic layout and navigation components
+**Components:**
+- Install AI SDK packages
+- `/api/chat/route.ts` with basic `streamText`
+- `ChatWidget` with `useChat` hook
+- `ChatPanel` and `ChatInput` components
+- AbortController cleanup on both client and server
 
-**Addresses:**
-- Pitfall #3: Schema design for multi-vendor identity
-- Table stakes: Database foundation for all features
-- Architecture: Proper Supabase client separation pattern
+### Phase 2: Catalog Search Tools
+**Rationale:** Core value proposition - natural language queries against the catalog. Builds on streaming foundation.
+**Delivers:** NL-to-filter translation via Gemini tool calling
+**Uses:** `getProducts()`, `findSimilarProducts()`, `getProductPriceComparison()` wrapped as tools
+**Implements:** Tool execution pattern with typed responses
+**Avoids:** Parallel Function Call Ordering (Pitfall 2), Mode Mismatch (Pitfall 3), Schema Drift (Pitfall 9)
+**Estimated effort:** 2-3 hours
 
-**Avoids:**
-- Schema migration hell from flat vendor-product model
-- Multi-tenant data leaks from RLS mistakes
-- EMDN code validation failures from missing registry
+**Tools to implement:**
+- `searchCatalog` - wraps `getProducts()`
+- `findSimilar` - wraps `findSimilarProducts()`
+- `comparePrices` - wraps `getProductPriceComparison()`
+- `getCategoryInfo` - explains EMDN categories
 
-**Research needs:** Standard patterns, skip phase research
+**Circuit breaker consideration:** May need adjustment for chat query patterns.
 
-### Phase 2: Catalog Table with SSR
-**Rationale:** Core user value is browsing/filtering products. Building this with Server Components and URL-based state establishes the architectural pattern for the rest of the app. Demonstrates immediate value without AI complexity.
+### Phase 3: Context and Error Handling
+**Rationale:** Conversations need to maintain context without exhausting token limits. Error handling is critical for production reliability.
+**Delivers:** Conversation memory, graceful degradation, error recovery
+**Addresses:** Conversation context (table stake), long conversation support
+**Avoids:** Context Window Exhaustion (Pitfall 4), API failures (Pitfall 11)
+**Estimated effort:** 2-3 hours
 
-**Delivers:**
-- Catalog listing page with Server Component data fetching
-- URL-based pagination, sorting, filtering (shareable links)
-- Product detail view with full specifications
-- EMDN code display with hierarchical visualization
-- Basic search (PostgreSQL full-text)
-- Export to CSV functionality
-- Responsive table component
+**Key patterns:**
+- Sliding window with summarization
+- Tool result summarization before adding to history
+- Fallback responses for timeout, rate limit, unknown errors
 
-**Uses:**
-- Next.js App Router Server Components
-- Supabase queries with filtering/pagination
-- shadcn/ui table components
-- URL search params for state management
+### Phase 4: External Web Search
+**Rationale:** Key differentiator - find EU market alternatives not in catalog. Requires working chat and tools first.
+**Delivers:** "Find alternatives" capability via Gemini Google Search grounding
+**Uses:** `google.tools.googleSearch()` from `@ai-sdk/google`
+**Addresses:** "Find alternatives" (differentiator)
+**Estimated effort:** 2-3 hours
 
-**Implements:**
-- Architecture: URL-based state pattern
-- Feature: Product listing table (table stakes)
-- Feature: Filtering, sorting, pagination (table stakes)
+**Considerations:**
+- Grounding results include source citations
+- Must clearly label as "external suggestions" not catalog data
+- Compliance disclaimer for medical device context
 
-**Avoids:**
-- Pitfall: useEffect for initial data fetch (use Server Components)
-- Pitfall: Storing table state in React state (use URL)
+### Phase 5: UI Polish and Integration
+**Rationale:** Polish after core functionality works. i18n last because it touches all user-facing strings.
+**Delivers:** Production-ready UX, localization, visual polish
+**Addresses:** Quick action buttons, suggested prompts, "Open in catalog"
+**Avoids:** Z-index Wars (Pitfall 7), Hardcoded English (Pitfall 12)
+**Estimated effort:** 2-3 hours
 
-**Research needs:** Standard patterns, skip phase research
-
-### Phase 3: AI Extraction Pipeline
-**Rationale:** Core differentiator but highest technical risk. Confidence scoring and schema validation must be built from day one—retrofitting these is expensive. This phase validates the AI value proposition before investing in polish.
-
-**Delivers:**
-- Gemini service with prompt templates for extraction
-- /api/extract route handler with structured output
-- File upload component (text/markdown only for MVP)
-- Extraction job tracking table
-- Zod validation for LLM outputs with retry logic
-- Field-level confidence scoring
-- Post-processing pipeline for data normalization
-
-**Uses:**
-- Gemini 3 Flash Preview with thinking_level: "medium"
-- @google/genai SDK 1.37.x
-- Flat JSON schemas with explicit propertyOrdering
-- SheetJS for parsing uploaded files
-- Zod safeParse for validation with error recovery
-
-**Implements:**
-- Feature: AI extraction (core differentiator)
-- Architecture: Route Handlers for LLM operations
-- Service layer: Gemini service abstraction
-
-**Avoids:**
-- Pitfall #1: Trusting LLM without confidence scores
-- Pitfall #5: Gemini API assumptions (schema complexity, validation)
-- Technical debt: Hardcoded model version (pin to specific model)
-
-**Research needs:** MODERATE - Gemini structured output patterns well-documented, but prompt engineering for product extraction may need iteration
-
-### Phase 4: Human-in-the-Loop Review
-**Rationale:** Extraction without review is dangerous in medical context. Review UX determines whether system gets used or abandoned. Confidence-based routing prevents reviewer fatigue from day one.
-
-**Delivers:**
-- Extraction preview component showing all extracted products
-- Inline editing with form validation
-- Confidence score visualization (color-coded badges)
-- Source document highlighting (show extraction location)
-- Batch approve/reject with confirmation dialogs
-- Individual product edit/delete
-- Save to catalog with audit trail
-
-**Uses:**
-- React Hook Form for extraction editing
-- Server Actions for batch product creation
-- Framer Motion for list animations
-- Sonner for toast notifications
-
-**Implements:**
-- Feature: Extraction preview/edit (table stakes for AI system)
-- Feature: Real-time extraction preview (differentiator)
-- Architecture: Client Components with Server Actions
-
-**Avoids:**
-- Pitfall #4: Reviewer fatigue UI
-- UX pitfall: No extraction progress indicator
-- UX pitfall: No "why" for AI suggestions
-
-**Research needs:** LOW - Standard form patterns, focus on UX testing
-
-### Phase 5: Duplicate Detection
-**Rationale:** Critical for catalog quality but depends on having products in database. Can be added once extraction pipeline is validated. Missing this leads to catalog pollution that's expensive to clean up.
-
-**Delivers:**
-- Similarity scoring service (text-based for MVP)
-- Duplicate detection check before product insert
-- Similar product warning UI (shows top 3 matches with scores)
-- Manual merge capability for confirmed duplicates
-- Segmented comparison (by brand + category) for performance
-
-**Uses:**
-- PostgreSQL pg_trgm extension for text similarity
-- Jaccard/TF-IDF for MVP (defer ML embeddings)
-- Supabase RPC functions for similarity queries
-
-**Implements:**
-- Feature: Duplicate detection with warnings (differentiator)
-- Feature: Similarity score display (differentiator)
-- Architecture: Pre-insert validation pattern
-
-**Avoids:**
-- Pitfall: O(n^2) comparison performance (segment by category)
-- Pitfall: Duplicate detection as cleanup, not prevention
-
-**Research needs:** LOW - Text similarity algorithms well-documented
-
-### Phase 6: AI-Assisted EMDN Classification
-**Rationale:** Reduces manual classification burden but requires EMDN registry validation. Can be optional feature for launch, added based on user feedback. More valuable once catalog has significant data.
-
-**Delivers:**
-- /api/classify route handler with EMDN context
-- EMDN selector component with AI suggestions
-- Top-N classification suggestions with rationale
-- Manual EMDN search with autocomplete
-- Validation against local EMDN registry
-- Confidence score storage for classifications
-
-**Uses:**
-- Gemini 3 Flash Preview for classification
-- EMDN codes table with full-text search
-- TanStack Query for caching classification results
-
-**Implements:**
-- Feature: AI-assisted EMDN classification (differentiator)
-- Service layer: EMDN service with search/validation
-- Architecture: Route Handler for classification API
-
-**Avoids:**
-- Pitfall #2: EMDN classification without validation
-- Pitfall: LLM suggesting non-existent codes
-
-**Research needs:** MODERATE - EMDN structure well-documented, but classification prompt engineering may need iteration
-
-### Phase 7: Polish + Production Readiness
-**Rationale:** Final phase focuses on user experience improvements and operational requirements. Only after core functionality is validated.
-
-**Delivers:**
-- Loading states and skeleton screens
-- Error boundaries with user-friendly messages
-- Saved filter presets (per user)
-- Column visibility toggle
-- Advanced filters (price range, material, manufacturer)
-- Audit trail UI (view product change history)
-- Rate limiting for Gemini API calls
-- Background job queue for extraction processing
-- Monitoring and error tracking
-
-**Uses:**
-- Framer Motion for animations
-- TanStack Query for optimistic updates
-- Supabase Realtime for job status updates (optional)
-
-**Implements:**
-- Feature: Saved filter presets
-- Feature: Column visibility toggle
-- Feature: Audit trail
-- UX improvements across all features
-
-**Research needs:** NONE - Standard patterns
+**Polish items:**
+- Typing indicators during streaming
+- Message timestamps
+- Suggested starter prompts
+- Quick action buttons after responses
+- i18n via existing `next-intl` setup
+- Z-index scale consistent with Radix components
 
 ### Phase Ordering Rationale
 
-**Why this order:**
-
-1. **Foundation first (Phase 1):** Schema mistakes are expensive to fix. Multi-tenant RLS must be correct from day one. EMDN registry must exist before classification.
-
-2. **Catalog before AI (Phase 2):** Demonstrates immediate value, validates Server Component architecture, provides foundation for testing extraction output.
-
-3. **Extraction before Review (Phase 3 -> 4):** Must have extraction working to design review UX. Review UI useless without data to review.
-
-4. **Duplicate detection after extraction (Phase 5):** Needs products in database to test similarity scoring. Can't validate approach without real data.
-
-5. **Classification deferred (Phase 6):** Optional for launch, more valuable with larger catalog. Can be skipped if manual classification is acceptable.
-
-6. **Polish last (Phase 7):** Don't optimize UX before validating core functionality. Loading states matter less than correct data.
-
-**Dependency chains:**
-- Phase 1 (Schema) -> Phase 2 (Catalog) -> Phase 3 (Extraction) -> Phase 4 (Review)
-- Phase 1 (EMDN Registry) -> Phase 6 (Classification)
-- Phase 2 (Catalog) -> Phase 5 (Duplicate Detection)
-- Phase 4 (Review) -> Phase 7 (Polish)
-
-**Risk mitigation:**
-- Phase 1 addresses schema and security pitfalls before any data
-- Phase 3 builds confidence scoring from day one (Pitfall #1)
-- Phase 4 prevents reviewer fatigue (Pitfall #4)
-- Phase 6 validates EMDN codes (Pitfall #2)
+1. **Streaming before tools:** Tools depend on streaming infrastructure. If streaming leaks memory, tools won't matter.
+2. **Catalog tools before web search:** Internal catalog search is table stakes. Web search is a differentiator that builds on established patterns.
+3. **Context management before polish:** Long conversations will fail without context management. Better to have working but ugly than polished but broken.
+4. **i18n last:** Touches all user-facing strings; easier to localize when strings are finalized.
 
 ### Research Flags
 
-**Phases needing deeper research during planning:**
-- **Phase 3 (AI Extraction):** Prompt engineering for product extraction may need iteration based on vendor document formats. Gemini structured output patterns are well-documented, but domain-specific extraction quality is uncertain.
-- **Phase 6 (EMDN Classification):** EMDN hierarchy structure is documented, but optimal classification prompt and confidence calibration needs experimentation.
+**Phases needing attention during implementation:**
 
-**Phases with standard patterns (skip research-phase):**
-- **Phase 1 (Foundation):** Standard Supabase setup, well-documented Next.js patterns
-- **Phase 2 (Catalog Table):** Standard Server Component data fetching, common e-commerce patterns
-- **Phase 4 (Review UI):** Standard form patterns with React Hook Form
-- **Phase 5 (Duplicate Detection):** Text similarity algorithms well-documented
-- **Phase 7 (Polish):** Standard UX patterns
+| Phase | Flag | Reason |
+|-------|------|--------|
+| Phase 1 | VERIFY | AbortController cleanup patterns - test with rapid open/close cycles |
+| Phase 2 | VERIFY | Parallel tool response batching - test with queries that trigger multiple tools |
+| Phase 4 | VERIFY | Google Search grounding response format - confirm citation handling |
+
+**Phases with standard patterns (lower risk):**
+
+| Phase | Reason |
+|-------|--------|
+| Phase 3 | Context windowing is well-documented pattern |
+| Phase 5 | UI polish uses existing Radix/Tailwind patterns |
+
+---
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | Official Next.js, Supabase, Gemini docs verified. Version compatibility confirmed. All technologies production-ready. |
-| Features | MEDIUM | WebSearch-based with multiple authoritative sources (GHX, procurement platforms, UX research). Table stakes features verified across competitors. AI extraction as differentiator confirmed by market research. |
-| Architecture | HIGH | Next.js App Router patterns from official docs. Supabase SSR integration well-documented. LLM integration patterns from multiple verified sources. Three-tier product model validated by e-commerce best practices. |
-| Pitfalls | HIGH | LLM hallucination rates from peer-reviewed medical research. EMDN compliance requirements from official EU sources. Gemini API limitations from official Google docs. Multi-tenancy security patterns from Supabase docs. |
+| Stack | HIGH | Official docs verified, Feb 2026 releases confirmed |
+| Features | MEDIUM | Industry patterns established, some chatbot UX is speculative |
+| Architecture | HIGH | Verified with Vercel AI SDK docs, matches Next.js 16 patterns |
+| Pitfalls | MEDIUM-HIGH | Mix of official docs and community resources |
 
-**Overall confidence:** HIGH
-
-The stack and architecture recommendations are based on official documentation and production-tested patterns. Feature priorities are validated against real-world procurement platforms and UX research. Pitfall identification is grounded in published research (medical LLM hallucination studies, EMDN regulatory guidance) and official API documentation. The main uncertainty is prompt engineering quality for extraction and classification, which requires iteration but has well-documented baseline patterns.
+**Overall confidence:** MEDIUM-HIGH
 
 ### Gaps to Address
 
-**During Phase 3 planning:**
-- Vendor document format variability: Research covered text/markdown extraction, but real vendor spreadsheets may have inconsistent schemas. Plan for prompt template variations by vendor.
-- Gemini structured output quality: Documented patterns exist, but domain-specific extraction quality (medical devices, specs, materials) needs validation with sample documents.
+| Gap | How to Handle |
+|-----|---------------|
+| Exact Google Search grounding response shape | Verify during Phase 4 implementation with test queries |
+| Circuit breaker threshold for chat | Measure during Phase 2, adjust based on actual query patterns |
+| Tool response size limits | Test with large product result sets in Phase 2 |
+| Mobile UX for floating widget | Defer to post-launch unless issues arise during testing |
 
-**During Phase 6 planning:**
-- EMDN classification confidence calibration: Research shows LLMs can classify, but optimal confidence thresholds for medical device categories need experimentation with real product data.
-- EMDN code change detection: EC doesn't provide API for code updates. Need strategy for periodic registry re-sync and product re-validation.
-
-**Post-launch validation:**
-- Duplicate detection accuracy: Text-based similarity is documented approach, but real-world accuracy with orthopedic products needs measurement. May need to advance to embeddings sooner than planned.
-- Reviewer fatigue metrics: Research provides UX patterns, but actual review throughput and approval rates need monitoring to validate confidence thresholds.
+---
 
 ## Sources
 
 ### Primary (HIGH confidence)
-
-**Official Documentation:**
-- [Next.js 15 Documentation](https://nextjs.org/docs) - App Router, Server Actions, Route Handlers
-- [Supabase SSR Documentation](https://supabase.com/docs/guides/auth/server-side/nextjs) - Next.js integration patterns
-- [Gemini API Structured Output](https://ai.google.dev/gemini-api/docs/structured-output) - Schema requirements, limitations
-- [European Medical Devices Nomenclature (EMDN)](https://health.ec.europa.eu/medical-devices-topics-interest/european-medical-devices-nomenclature-emdn_en) - Official EMDN registry
-- [Tailwind CSS v4](https://tailwindcss.com/blog/tailwindcss-v4) - CSS-first configuration
-- [Zod 4 Documentation](https://zod.dev/) - Schema validation
-
-**Technical Stack:**
-- [Google GenAI SDK GitHub](https://github.com/googleapis/js-genai) - SDK usage patterns
-- [shadcn/ui Next.js Installation](https://ui.shadcn.com/docs/installation/next) - Component setup
-- [React Hook Form + Server Actions](https://nehalist.io/react-hook-form-with-nextjs-server-actions/) - Integration pattern
-- [TanStack Query v5 Docs](https://tanstack.com/query/v5/docs/framework/react/overview) - Data fetching
+- [Vercel AI SDK 6 Announcement](https://vercel.com/blog/ai-sdk-6) - Major version features
+- [AI SDK Getting Started](https://ai-sdk.dev/docs/getting-started/nextjs-app-router) - Next.js App Router setup
+- [AI SDK Google Provider](https://ai-sdk.dev/providers/ai-sdk-providers/google-generative-ai) - Google Search grounding syntax
+- [Gemini API Grounding with Google Search](https://ai.google.dev/gemini-api/docs/google-search) - Grounding metadata structure
+- [Gemini Function Calling](https://ai.google.dev/gemini-api/docs/function-calling) - Tool calling patterns
+- [Next.js Route Handlers](https://nextjs.org/docs/app/getting-started/route-handlers) - Streaming responses
 
 ### Secondary (MEDIUM confidence)
+- [Chatbot UX Design Guide](https://www.parallelhq.com/blog/chatbot-ux-design) - UX patterns
+- [NN/g Prompt Controls](https://www.nngroup.com/articles/prompt-controls-genai/) - Quick action button patterns
+- [Context Window Management](https://www.getmaxim.ai/articles/context-window-management-strategies-for-long-context-ai-agents-and-chatbots/) - Sliding window strategies
+- [Next.js SSE Discussion #61972](https://github.com/vercel/next.js/discussions/61972) - Connection cleanup patterns
 
-**Architecture Patterns:**
-- [Next.js App Router Architecture](https://dev.to/yukionishi1129/building-a-production-ready-nextjs-app-router-architecture-a-complete-playbook-3f3h) - Production patterns
-- [Server Actions vs Route Handlers](https://makerkit.dev/blog/tutorials/server-actions-vs-route-handlers) - When to use each
-- [Supabase Multi-Tenancy with RLS](https://www.antstack.com/blog/multi-tenant-applications-with-rls-on-supabase-postgress/) - Security patterns
-- [Supabase Best Practices](https://www.leanware.co/insights/supabase-best-practices) - Security, scaling, maintainability
-
-**Features & UX:**
-- [GHX Healthcare Supply Chain 2026](https://www.ghx.com/the-healthcare-hub/top-5-healthcare-supply-chain-predictions-for-2026/) - Industry trends
-- [Baymard - Comparison Tool Design](https://baymard.com/ecommerce-design-examples/39-comparison-tool) - UX patterns
-- [NN/g - Data Tables UX](https://www.nngroup.com/articles/data-tables/) - Enterprise table patterns
-- [Cradl.ai - AI Document Extraction 2026](https://www.cradl.ai/post/document-data-extraction-using-ai) - Extraction patterns
-
-**Medical Domain:**
-- [EMDN Structure and Application](https://www.kiwa.com/en/insights/stories/emdn-codes-hierarchical-structure-and-application/) - EMDN hierarchy
-- [MDCG 2024-2 Rev.1 - EMDN Updates](https://mantrasystems.com/articles/key-updates-navigating-emdn-mdcg-2024-2-2021-12-revision-1) - Regulatory guidance
-- [Rimsys - EU MDR/IVDR UDI Guide](https://www.rimsys.io/blog/the-ultimate-guide-to-the-eu-mdr-ivdr-udi) - Compliance requirements
-
-**LLM & AI:**
-- [Structured Document Data Extraction Challenges](https://zilliz.com/blog/challenges-in-structured-document-data-extraction-at-scale-llms) - Pitfalls at scale
-- [Medical Hallucination in Foundation Models](https://arxiv.org/html/2503.05777v2) - LLM reliability in medical context
-- [LLM Evaluation for Data Extraction](https://pmc.ncbi.nlm.nih.gov/articles/PMC12703319/) - Validation requirements
-- [Gemini Structured Output Improvements](https://blog.google/innovation-and-ai/technology/developers-tools/gemini-api-structured-outputs/) - Google official guidance
-
-**Duplicate Detection:**
-- [Coupang - Duplicate Item Matching](https://medium.com/coupang-engineering/matching-duplicate-items-to-improve-catalog-quality-ca4abc827f94) - Production system patterns
-- [Multimodal Embeddings for Product Deduplication](https://arxiv.org/abs/2509.15858) - Advanced techniques
-- [Duplicate Product Detection Engine](https://www.sciencedirect.com/science/article/abs/pii/S0957417421017073) - Academic research
-
-### Tertiary (LOW confidence, requires validation)
-
-- Human-in-the-Loop UX patterns from Zapier, Unstract - general guidance, needs medical context adaptation
-- B2B search/filtering patterns from Algolia, Fact-Finder - e-commerce focus, may not match procurement workflows
+### Existing Codebase (HIGH confidence)
+- `src/lib/queries.ts` - Product query infrastructure with filters
+- `src/lib/actions/similarity.ts` - Price comparison and similarity search RPC
+- `src/lib/schemas/product.ts` - Product data structure
+- `src/lib/gemini/client.ts` - Existing Gemini client pattern
+- `src/lib/supabase/circuit-breaker.ts` - Rate limiting pattern
 
 ---
-*Research completed: 2026-02-02*
+
+**Model Deprecation Notice:** Gemini 2.0 Flash and Flash-Lite will be retired March 3, 2026. Use `gemini-2.5-flash` or `gemini-3-flash-preview` for this milestone.
+
+---
+*Research completed: 2026-02-05*
 *Ready for roadmap: yes*

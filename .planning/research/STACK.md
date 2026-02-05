@@ -1,356 +1,371 @@
-# Stack Research
+# Technology Stack: Chatbot Interface Additions
 
-**Domain:** Medical Product Catalog with AI Classification
-**Researched:** 2026-02-02
-**Confidence:** HIGH (verified via official docs and recent sources)
+**Domain:** Conversational AI Chatbot for Medical Device Catalog
+**Researched:** 2026-02-05
+**Focus:** Stack ADDITIONS for chatbot milestone (builds on existing v1.0 stack)
 
-## Recommended Stack
+## Executive Summary
 
-### Core Technologies
+This milestone adds a floating chat widget to MedCatalog that queries the product database AND uses Gemini with web search grounding to find EU market alternatives. The architecture choice is critical: **use Vercel AI SDK** rather than extending the existing `@google/genai` client directly.
+
+**Why Vercel AI SDK over direct @google/genai:**
+1. Built-in streaming abstraction eliminates manual ReadableStream construction
+2. `useChat` hook handles all client-side state (messages, loading, errors)
+3. Google Search grounding is supported via `@ai-sdk/google` provider
+4. Message parts system handles text, tool calls, and citations cleanly
+5. ~60% less boilerplate than manual streaming implementation
+
+## Stack Additions
+
+### AI Streaming & Chat Infrastructure
 
 | Technology | Version | Purpose | Why Recommended |
 |------------|---------|---------|-----------------|
-| Next.js | 15.5.x | Full-stack React framework | App Router is mature, Server Actions eliminate API boilerplate, Turbopack provides fast builds. Next.js 16 exists but 15.5 is battle-tested and all shadcn/ui templates target it. Security patches actively maintained. |
-| React | 19.x | UI library | Bundled with Next.js 15.5. Required for Server Components, `useActionState`, and `useFormStatus` hooks used in form handling. |
-| TypeScript | 5.5+ | Type safety | Required by Zod 4, provides compile-time safety for medical data structures. Strict mode mandatory. |
-| Tailwind CSS | 4.x | Styling | CSS-first configuration (no tailwind.config.js needed), 5x faster builds, automatic content detection. Required for shadcn/ui. |
-| Supabase | Latest | PostgreSQL database + Auth + Storage | Managed PostgreSQL eliminates DevOps, Row-Level Security for multi-tenant data isolation, Storage for vendor spreadsheets. `@supabase/ssr` package handles Next.js App Router auth flow. |
+| ai | 6.0.x | Vercel AI SDK core | Provides `streamText`, `UIMessage`, streaming protocol. Current version as of Feb 2026. |
+| @ai-sdk/google | 3.0.x | Google provider | Wraps Gemini models with unified API. Built-in `google.tools.googleSearch()` for grounding. |
+| @ai-sdk/react | 3.0.x | React hooks | `useChat` hook manages messages, streaming state, tool calls. Works with App Router. |
 
-### AI / LLM Integration
+**Integration Point:** The existing `@google/genai` client in `lib/gemini/client.ts` remains for document extraction. The new Vercel AI SDK handles chat-specific needs separately - this is cleaner than trying to unify them.
+
+**Current Package Versions (verified Feb 5, 2026):**
+- `ai@6.0.71` - Core SDK
+- `@ai-sdk/react@3.0.73` - React hooks
+- `@ai-sdk/google@3.0.21` - Google/Gemini provider
+
+### Markdown Rendering for Chat
 
 | Technology | Version | Purpose | Why Recommended |
 |------------|---------|---------|-----------------|
-| @google/genai | 1.37.x | Gemini SDK | Unified SDK for Gemini 2.0+ (replaces deprecated `@google/generative-ai`). TypeScript-first, supports `gemini-3-flash-preview` model specified in requirements. |
-| gemini-3-flash-preview | - | LLM model | Balanced model with Pro-level intelligence at Flash speed/pricing. Use `thinking_level: "medium"` for classification tasks requiring reasoning. |
+| react-markdown | 9.x | Markdown rendering | Stable, widely used. Renders AI responses with proper formatting. |
+| remark-gfm | 4.x | GitHub Flavored Markdown | Enables tables, task lists, strikethrough in responses. Required for comparison tables. |
 
-**Gemini SDK Usage Pattern:**
+**Alternative Considered:** Streamdown (drop-in replacement optimized for AI streaming). However, react-markdown + remark-gfm is sufficient and avoids adding another dependency. Streamdown's main benefit (handling incomplete markdown chunks) is handled by AI SDK's streaming protocol.
+
+### Chat UI Components
+
+| Approach | Recommendation |
+|----------|----------------|
+| **Option A: Build custom** | RECOMMENDED for this project |
+| Option B: assistant-ui | Overkill - adds persistence, complex state |
+| Option C: chatscope/chat-ui-kit | Too opinionated styling, hard to match existing design |
+
+**Rationale for custom components:**
+- Chat widget is relatively simple (messages, input, buttons)
+- Existing Radix UI + Tailwind foundation provides all primitives needed
+- Full control over styling to match MedCatalog design system
+- No additional dependencies beyond AI SDK
+
+**Components to build:**
+- `ChatWidget` - Floating button + expandable container
+- `ChatMessage` - Renders text, tables, buttons, citations
+- `ChatInput` - Auto-resize textarea + send button
+- `SuggestionChips` - Quick action buttons
+- `ProductTable` - Inline comparison table (reuse existing TanStack Table patterns)
+
+## Implementation Patterns
+
+### Route Handler Setup
+
 ```typescript
-import { GoogleGenAI } from '@google/genai';
+// app/api/chat/route.ts
+import { streamText, UIMessage, convertToModelMessages } from 'ai';
+import { google } from '@ai-sdk/google';
+import { createClient } from '@/lib/supabase/server';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+export const maxDuration = 60; // Allow longer responses for web search
 
-const response = await ai.models.generateContent({
-  model: 'gemini-3-flash-preview',
-  contents: prompt,
-  generationConfig: {
-    thinking_level: 'medium', // minimal | low | medium | high
-  },
-});
-```
+export async function POST(req: Request) {
+  const { messages }: { messages: UIMessage[] } = await req.json();
+  const supabase = await createClient();
 
-### Database & Backend
+  // Get product context from database
+  const { data: products } = await supabase
+    .from('products')
+    .select('name, sku, vendor:vendors(name), price')
+    .limit(100);
 
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| @supabase/supabase-js | 2.x | Supabase client | Core client for database operations, realtime subscriptions. |
-| @supabase/ssr | 0.5.x | Server-side auth | Handles cookie-based auth in Next.js App Router. Creates separate clients for Server Components vs Client Components. |
-| Supabase Storage | - | File storage | Store uploaded vendor spreadsheets. Use signed URLs for uploads >1MB (Next.js Server Action body limit). |
-
-**Supabase Client Setup Pattern:**
-```typescript
-// lib/supabase/server.ts
-import { createServerClient } from '@supabase/ssr';
-import { cookies } from 'next/headers';
-
-export async function createClient() {
-  const cookieStore = await cookies();
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll: () => cookieStore.getAll(),
-        setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value, options }) =>
-            cookieStore.set(name, value, options)
-          );
+  const result = streamText({
+    model: google('gemini-2.5-flash'),
+    system: buildSystemPrompt(products),
+    messages: await convertToModelMessages(messages),
+    tools: {
+      // Enable Google Search for EU market alternatives
+      google_search: google.tools.googleSearch({}),
+      // Custom tool for database queries
+      search_products: {
+        description: 'Search the product catalog',
+        parameters: z.object({
+          query: z.string(),
+          category: z.string().optional(),
+        }),
+        execute: async ({ query, category }) => {
+          return searchProducts(supabase, query, category);
         },
       },
-    }
-  );
-}
+    },
+  });
 
-// lib/supabase/client.ts
-import { createBrowserClient } from '@supabase/ssr';
-
-export function createClient() {
-  return createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  return result.toUIMessageStreamResponse();
 }
 ```
 
-### UI Components & Animation
+### Client Component Pattern
 
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| shadcn/ui | Latest | Component library | Copy-paste components you own. Built on Radix UI + Tailwind. Perfect integration with React Hook Form + Zod. Server Components compatible. |
-| Framer Motion | 11.x | Animation | Rebranded to "Motion". v11 has improved layout animations for React 19. 8.1M weekly npm downloads. Use `motion` import. |
-| lucide-react | 0.562.x | Icons | 1000+ tree-shakable SVG icons. Default for shadcn/ui. Avoid dynamic imports (slow dev server). |
-| sonner | Latest | Toast notifications | shadcn/ui's default toast. Works with Server Components via cookies. Simple API: `toast.success()`. |
-
-**Framer Motion Patterns:**
 ```typescript
-import { motion, AnimatePresence } from 'motion/react';
-
-// Page transitions
-<AnimatePresence mode="wait">
-  <motion.div
-    key={pathname}
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    exit={{ opacity: 0, y: -20 }}
-    transition={{ duration: 0.2 }}
-  >
-    {children}
-  </motion.div>
-</AnimatePresence>
-
-// List stagger animation
-<motion.ul variants={container} initial="hidden" animate="visible">
-  {items.map((item) => (
-    <motion.li key={item.id} variants={listItem} layout>
-      {item.name}
-    </motion.li>
-  ))}
-</motion.ul>
-
-// Performance: use layout prop for smooth layout animations
-// Performance: use willChange prop for browser optimization hints
-// Performance: keep exit animations short (<200ms)
-```
-
-### Form Handling & Validation
-
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| react-hook-form | 7.x | Form state management | Minimal re-renders, works with Server Actions via `action` prop. Use `useActionState` for server validation state. |
-| zod | 4.x | Schema validation | TypeScript-first, share schemas between client/server. Zod 4 is stable with improved performance. Requires TS 5.5+. |
-| @hookform/resolvers | Latest | Zod integration | First-party Zod resolver for react-hook-form. |
-
-**Form Pattern with Server Actions:**
-```typescript
-// schemas/product.ts
-import { z } from 'zod';
-
-export const productSchema = z.object({
-  name: z.string().min(1, 'Product name required'),
-  emdnCode: z.string().regex(/^[A-Z]\d{2}(\d{2,10})?$/, 'Invalid EMDN code'),
-  vendorId: z.string().uuid(),
-});
-
-export type ProductInput = z.infer<typeof productSchema>;
-
-// actions/products.ts
-'use server';
-import { productSchema } from '@/schemas/product';
-
-export async function createProduct(prevState: any, formData: FormData) {
-  const result = productSchema.safeParse(Object.fromEntries(formData));
-  if (!result.success) {
-    return { errors: result.error.flatten().fieldErrors };
-  }
-  // ... database insert
-  return { success: true };
-}
-
-// components/product-form.tsx
+// components/chat/chat-widget.tsx
 'use client';
-import { useActionState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 
-export function ProductForm() {
-  const [state, formAction, pending] = useActionState(createProduct, null);
-  const form = useForm({
-    resolver: zodResolver(productSchema),
-    mode: 'onBlur', // Validate on blur, submit to server
+import { useChat } from '@ai-sdk/react';
+import { DefaultChatTransport } from 'ai';
+import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
+export function ChatWidget() {
+  const [isOpen, setIsOpen] = useState(false);
+  const { messages, sendMessage, status, error } = useChat({
+    transport: new DefaultChatTransport({ api: '/api/chat' }),
   });
 
   return (
-    <form action={formAction}>
-      {/* form fields */}
-    </form>
+    <div className="fixed bottom-4 right-4 z-50">
+      {isOpen ? (
+        <ChatPanel
+          messages={messages}
+          onSend={sendMessage}
+          status={status}
+        />
+      ) : (
+        <ChatButton onClick={() => setIsOpen(true)} />
+      )}
+    </div>
+  );
+}
+
+function ChatPanel({ messages, onSend, status }) {
+  return (
+    <div className="w-96 h-[600px] bg-white rounded-xl shadow-2xl flex flex-col">
+      <ChatHeader />
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {messages.map(message => (
+          <ChatMessage key={message.id} message={message} />
+        ))}
+      </div>
+      <ChatInput onSend={onSend} disabled={status !== 'ready'} />
+    </div>
+  );
+}
+
+function ChatMessage({ message }) {
+  return (
+    <div className={message.role === 'user' ? 'text-right' : 'text-left'}>
+      {message.parts.map((part, i) => {
+        if (part.type === 'text') {
+          return (
+            <ReactMarkdown
+              key={i}
+              remarkPlugins={[remarkGfm]}
+              components={{
+                table: ({ children }) => (
+                  <table className="min-w-full border-collapse">
+                    {children}
+                  </table>
+                ),
+              }}
+            >
+              {part.text}
+            </ReactMarkdown>
+          );
+        }
+        if (part.type === 'tool-google_search') {
+          return <SourcesCitation key={i} sources={part.result} />;
+        }
+        return null;
+      })}
+    </div>
   );
 }
 ```
 
-### File Processing
+### Google Search Grounding Response Handling
 
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| xlsx (SheetJS) | Latest | Spreadsheet parsing | Most comprehensive Excel parser. Handles .xlsx, .xls, .csv. No external dependencies. Works in browser and Node. |
-
-**File Upload Pattern:**
 ```typescript
-// For files >1MB, use Supabase signed URLs
-// Server Action creates signed URL, client uploads directly
+// The AI SDK automatically handles grounding metadata
+// Access via message parts with type 'tool-google_search'
 
-// actions/upload.ts
-'use server';
-import { createClient } from '@/lib/supabase/server';
-
-export async function getUploadUrl(filename: string) {
-  const supabase = await createClient();
-  const { data, error } = await supabase.storage
-    .from('vendor-sheets')
-    .createSignedUploadUrl(`uploads/${Date.now()}-${filename}`);
-
-  if (error) throw error;
-  return data;
+interface GroundingResult {
+  webSearchQueries: string[];
+  groundingChunks: Array<{
+    web: { uri: string; title: string };
+  }>;
+  groundingSupports: Array<{
+    segment: { text: string };
+    groundingChunkIndices: number[];
+  }>;
 }
 
-// Client-side upload
-const { signedUrl, path } = await getUploadUrl(file.name);
-await fetch(signedUrl, {
-  method: 'PUT',
-  body: file,
-  headers: { 'Content-Type': file.type },
-});
+function SourcesCitation({ sources }: { sources: GroundingResult }) {
+  if (!sources?.groundingChunks?.length) return null;
+
+  return (
+    <div className="mt-2 text-sm text-muted-foreground">
+      <span className="font-medium">Sources:</span>
+      <ul className="mt-1 space-y-1">
+        {sources.groundingChunks.map((chunk, i) => (
+          <li key={i}>
+            <a
+              href={chunk.web.uri}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:underline"
+            >
+              {chunk.web.title}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 ```
 
-### Data & State Management
+### Interactive Buttons in Messages
 
-| Technology | Version | Purpose | Why Recommended |
-|------------|---------|---------|-----------------|
-| @tanstack/react-query | 5.90.x | Server state | Cache management, background refetching, optimistic updates. Pairs with Server Components for hybrid data fetching (SSR + client cache). |
-| date-fns | 3.x | Date formatting | Tree-shakable, fastest performance. Import only needed functions. |
+For interactive buttons (like "Compare these products" or "Show alternatives"), use tool calls with client-side execution:
 
-### Development Tools
+```typescript
+// In route handler
+tools: {
+  show_comparison: {
+    description: 'Display a comparison table for products',
+    parameters: z.object({
+      productIds: z.array(z.string()),
+    }),
+    // No execute - handled client-side
+  },
+  suggest_actions: {
+    description: 'Suggest follow-up actions to the user',
+    parameters: z.object({
+      actions: z.array(z.object({
+        label: z.string(),
+        prompt: z.string(),
+      })),
+    }),
+  },
+},
 
-| Tool | Purpose | Notes |
-|------|---------|-------|
-| ESLint | Linting | Use `eslint-config-next` for Next.js rules |
-| Prettier | Formatting | Configure with Tailwind plugin for class sorting |
-| prettier-plugin-tailwindcss | Class sorting | Auto-sorts Tailwind classes |
+// In client component
+function ChatMessage({ message, onSend }) {
+  return message.parts.map((part, i) => {
+    if (part.type === 'tool-suggest_actions' && part.result) {
+      return (
+        <div key={i} className="flex flex-wrap gap-2 mt-2">
+          {part.result.actions.map((action, j) => (
+            <button
+              key={j}
+              onClick={() => onSend({ text: action.prompt })}
+              className="px-3 py-1 rounded-full bg-primary/10 hover:bg-primary/20"
+            >
+              {action.label}
+            </button>
+          ))}
+        </div>
+      );
+    }
+    // ... other part types
+  });
+}
+```
 
 ## Installation
 
 ```bash
-# Core framework
-npx create-next-app@latest hospic --typescript --tailwind --eslint --app --src-dir
+# AI SDK (new dependencies)
+npm install ai @ai-sdk/google @ai-sdk/react
 
-# Supabase
-npm install @supabase/supabase-js @supabase/ssr
-
-# AI/LLM
-npm install @google/genai
-
-# UI Components (shadcn/ui - run init, then add components as needed)
-npx shadcn@latest init
-npx shadcn@latest add button input form card table dialog toast
-
-# Animation
-npm install framer-motion
-
-# Form handling
-npm install react-hook-form zod @hookform/resolvers
-
-# Data fetching
-npm install @tanstack/react-query
-
-# File processing
-npm install xlsx
-
-# Utilities
-npm install date-fns lucide-react sonner
-
-# Dev dependencies
-npm install -D prettier prettier-plugin-tailwindcss
+# Markdown rendering
+npm install react-markdown remark-gfm
 ```
 
-## Alternatives Considered
+**Total new dependencies:** 5 packages
+**Estimated bundle impact:** ~45KB gzipped (AI SDK is tree-shakeable)
 
-| Recommended | Alternative | When to Use Alternative |
-|-------------|-------------|-------------------------|
-| Next.js 15.5 | Next.js 16 | Only if you need Cache Components feature. 15.5 is more stable for production. |
-| Supabase | Firebase | If you need offline-first or real-time sync as primary feature. Firebase has better mobile SDKs. |
-| @google/genai | LangChain | If you need complex RAG pipelines or multi-model orchestration. Overkill for single-model classification. |
-| Framer Motion | CSS animations | For very simple hover states. Framer Motion adds ~40kb but provides AnimatePresence for mount/unmount. |
-| react-hook-form | Native forms + useActionState | If forms are very simple (1-2 fields). RHF adds value for complex validation UX. |
-| xlsx (SheetJS) | read-excel-file | If you only read small files (<10k rows). SheetJS handles large files better. |
-| date-fns | dayjs | If migrating from Moment.js (same API). dayjs is smaller but date-fns is faster. |
-
-## What NOT to Use
+## What NOT to Add
 
 | Avoid | Why | Use Instead |
 |-------|-----|-------------|
-| @google/generative-ai | Deprecated. No longer maintained, missing Gemini 3 features. | @google/genai |
-| Moment.js | Deprecated, huge bundle size (329kb). | date-fns or dayjs |
-| @supabase/auth-helpers-nextjs | Deprecated. Replaced by @supabase/ssr. | @supabase/ssr |
-| tailwind.config.js | Tailwind v4 uses CSS-first config. JS config still works but is legacy pattern. | @theme in CSS |
-| Dynamic lucide imports | Causes 12+ second HMR in dev. | Static imports only |
-| pages/ directory | Legacy Next.js pattern. | app/ directory (App Router) |
-| getServerSideProps | Pages Router pattern. | Server Components or Route Handlers |
-| API routes for mutations | Extra boilerplate. | Server Actions |
+| LangChain | Overkill for single-model chat with tools | Vercel AI SDK |
+| assistant-ui | Adds complexity (persistence, analytics) not needed for MVP | Custom components |
+| WebSocket for streaming | SSE is sufficient and simpler | AI SDK's default SSE transport |
+| Separate chat database | Messages are ephemeral for this use case | In-memory via useChat |
+| @google/genai for chat | Would require manual streaming implementation | @ai-sdk/google provider |
 
-## Stack Patterns by Variant
+## Model Selection
 
-**If file uploads are frequent/large (>10MB):**
-- Use Supabase Storage with resumable uploads
-- Consider chunked upload pattern
-- Set up background processing with Supabase Edge Functions
+| Model | Use Case | Cost |
+|-------|----------|------|
+| gemini-2.5-flash | Default for chat | Low (fast, cheap) |
+| gemini-2.5-pro | Complex comparisons (if flash insufficient) | Higher |
 
-**If real-time collaboration needed later:**
-- Supabase Realtime is already included
-- Structure tables with `updated_at` columns for change tracking
-- Use `useSubscription` from @supabase/supabase-js
+**Grounding billing note:** With Gemini 3+ models, Google Search grounding is billed per search query executed, not per prompt. Gemini 2.5 models are billed per prompt. Using gemini-2.5-flash keeps costs predictable.
 
-**If offline support needed:**
-- Add TanStack Query persist plugin
-- Consider PouchDB for complex offline scenarios
-- Note: Not typical for B2B procurement tools
+## Environment Variables
 
-## Version Compatibility
+Add to existing `.env`:
+```env
+# Existing
+GEMINI_API_KEY=...  # Already configured, reused by @ai-sdk/google
 
-| Package A | Compatible With | Notes |
-|-----------|-----------------|-------|
-| Next.js 15.5 | React 19.x | Bundled together |
-| Tailwind CSS 4.x | Next.js 15.5+ | Requires PostCSS setup in next.config |
-| shadcn/ui | Tailwind 4.x | Full support, uses new @theme syntax |
-| @supabase/ssr 0.5.x | Next.js 15+ | Designed for App Router |
-| Zod 4.x | TypeScript 5.5+ | Strict mode required |
-| Framer Motion 11.x | React 19.x | Improved concurrent rendering support |
-| @tanstack/react-query 5.x | React 18+ | Uses useSyncExternalStore |
-
-## EMDN Classification Notes
-
-The European Medical Device Nomenclature (EMDN) is accessed via:
-- Download: Excel/PDF from [EC EMDN Portal](https://webgate.ec.europa.eu/dyna2/emdn/)
-- No public API exists - must download and import into database
-- Structure: 7-level alphanumeric hierarchy (max 13 digits)
-- Updates: Annual releases (January each year)
-- Format: Category letter + 2-digit group + type numbers (e.g., `P030101`)
-
-**Recommendation:** Download EMDN Excel, parse with SheetJS, seed into Supabase table with columns:
-```sql
-CREATE TABLE emdn_codes (
-  code TEXT PRIMARY KEY,
-  category TEXT NOT NULL,
-  group_name TEXT NOT NULL,
-  type_name TEXT,
-  level INTEGER NOT NULL,
-  parent_code TEXT REFERENCES emdn_codes(code)
-);
+# No new env vars needed - AI SDK uses same GEMINI_API_KEY
+# (or GOOGLE_GENERATIVE_AI_API_KEY if you prefer)
 ```
+
+## Integration Points with Existing Stack
+
+| Existing | How Chat Uses It |
+|----------|------------------|
+| Supabase client (`lib/supabase/server.ts`) | Database queries for product context |
+| Product types (`lib/schemas/`) | Type-safe product data in chat responses |
+| TanStack Table patterns | Reuse for inline comparison tables |
+| Radix UI Dialog | Chat widget container |
+| Motion | Chat widget open/close animations |
+| Tailwind | All chat UI styling |
+
+## Architecture Boundary
+
+```
+Existing (@google/genai)          New (Vercel AI SDK)
+-------------------------          -------------------
+- Document extraction             - Chat streaming
+- PDF processing                  - Google Search grounding
+- Structured JSON output          - Tool execution
+- lib/gemini/client.ts            - app/api/chat/route.ts
+```
+
+Keep these separate. The existing extraction pipeline works well and doesn't need the streaming overhead. Chat has different requirements (streaming, tools, citations) that AI SDK handles better.
+
+## Confidence Assessment
+
+| Area | Confidence | Verification |
+|------|------------|--------------|
+| AI SDK setup | HIGH | Official docs, Feb 2026 releases |
+| Google Search grounding | HIGH | Verified syntax in official Gemini API docs |
+| Streaming in Next.js 16 | HIGH | Next.js 16 blog, AI SDK docs |
+| react-markdown + remark-gfm | HIGH | Stable, widely used |
+| Custom chat UI approach | MEDIUM | Recommendation based on project context |
+| Tool call buttons pattern | MEDIUM | AI SDK 6 redesigned tool parts |
 
 ## Sources
 
-- [Next.js 15 Documentation](https://nextjs.org/docs) - App Router, Server Actions
-- [Next.js Security Updates January 2026](https://nextjs.org/blog) - CVE patches
-- [Supabase SSR Documentation](https://supabase.com/docs/guides/auth/server-side/nextjs) - Next.js client setup
-- [Google GenAI SDK GitHub](https://github.com/googleapis/js-genai) - SDK usage patterns
-- [Gemini Models Documentation](https://ai.google.dev/gemini-api/docs/models) - Model IDs and capabilities
-- [Tailwind CSS v4](https://tailwindcss.com/blog/tailwindcss-v4) - CSS-first configuration
-- [shadcn/ui Next.js](https://ui.shadcn.com/docs/installation/next) - Component installation
-- [Motion (Framer Motion) Docs](https://motion.dev/docs/react-animation) - Animation patterns
-- [React Hook Form + Server Actions](https://nehalist.io/react-hook-form-with-nextjs-server-actions/) - Integration pattern
-- [Zod 4 Documentation](https://zod.dev/) - Schema validation
-- [TanStack Query v5](https://tanstack.com/query/v5/docs/framework/react/overview) - Data fetching
-- [EMDN Portal](https://webgate.ec.europa.eu/dyna2/emdn/) - Medical device nomenclature
-- [SheetJS Documentation](https://docs.sheetjs.com/) - Excel parsing
+- [Vercel AI SDK 6 Announcement](https://vercel.com/blog/ai-sdk-6) - Major version features
+- [AI SDK Getting Started](https://ai-sdk.dev/docs/getting-started/nextjs-app-router) - Next.js App Router setup
+- [AI SDK Google Provider](https://ai-sdk.dev/providers/ai-sdk-providers/google-generative-ai) - Google Search grounding syntax
+- [Gemini API Grounding with Google Search](https://ai.google.dev/gemini-api/docs/google-search) - Grounding metadata structure
+- [GitHub vercel/ai releases](https://github.com/vercel/ai/releases) - Current version verification
+- [GitHub js-genai streaming sample](https://github.com/googleapis/js-genai/blob/main/sdk-samples/generate_content_streaming.ts) - Direct SDK streaming pattern
+- [react-markdown GitHub](https://github.com/remarkjs/react-markdown) - GFM table support
+- [assistant-ui](https://www.assistant-ui.com/) - Considered but not recommended for this scope
 
 ---
-*Stack research for: Medical Product Catalog with AI Classification*
-*Researched: 2026-02-02*
+*Stack research for: Chatbot Interface Milestone*
+*Researched: 2026-02-05*

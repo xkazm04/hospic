@@ -230,5 +230,291 @@ Features to defer until product-market fit is established.
 - [PMC - Value-Based Medical Device Purchasing](https://pmc.ncbi.nlm.nih.gov/articles/PMC3293958/)
 
 ---
+
+# Milestone 1.2: Chatbot Interface Feature Research
+
+**Domain:** Conversational product search chatbot for medical device catalog
+**Researched:** 2026-02-05
+**Overall Confidence:** MEDIUM (WebSearch verified with industry patterns, cross-referenced with existing codebase capabilities)
+
+## Executive Summary
+
+Conversational product search chatbots for B2B catalogs follow established UX patterns: natural language understanding mapped to structured filters, interactive UI components (buttons, tables, cards) for actionable responses, and progressive disclosure to reduce cognitive load. The key differentiator for MedCatalog is leveraging **existing infrastructure** (similarity search, price comparison RPC functions, EMDN category tree) while adding conversational access.
+
+---
+
+## Chatbot Table Stakes
+
+Features users expect in any product search chatbot. Missing these = chatbot feels broken or useless.
+
+| Feature | Why Expected | Complexity | Existing Dependency | Notes |
+|---------|--------------|------------|---------------------|-------|
+| **Natural language product search** | Core value proposition - users ask in plain language | Medium | `getProducts()` with search, vendor, category, price filters | Must translate NL to existing filter params |
+| **Show search results** | Users need to see what matched | Low | Product data structure already defined | Render as cards or compact list |
+| **Filter by category** | EMDN navigation is central to the app | Low | `getEMDNCategories()`, `get_category_descendants()` RPC | Chatbot should understand category names/codes |
+| **Filter by vendor** | Multi-vendor catalog comparison is core use case | Low | `getVendors()`, vendor filter in queries | Support vendor name lookup |
+| **Filter by price range** | "under 5000 CZK" is common query pattern | Low | `minPrice`, `maxPrice` in `GetProductsParams` | Parse currency and amounts from NL |
+| **View product details** | Drill down into a specific product | Low | Product schema with full details | Render key fields: name, SKU, price, vendor, EMDN |
+| **Suggested prompts/starter questions** | Reduce blank-page syndrome, show capabilities | Low | None (new UI element) | 3-5 starter prompts visible on open |
+| **Quick action buttons** | Reduce typing, guide conversation | Low | None (new UI element) | Buttons after responses: "Compare prices", "Show more", "Filter by vendor" |
+| **Error handling with recovery** | Graceful degradation when query fails | Low | Existing error patterns | "I couldn't find that. Try: [suggestions]" |
+| **Conversation context** | Remember what user asked previously | Medium | None (new state) | Track current filters, last search, selected product |
+
+### Implementation Notes for Table Stakes
+
+**Natural Language to Filters Translation:**
+The chatbot needs to parse queries like "titanium hip stems under 5000" into:
+```typescript
+{
+  search: "hip stems",
+  material: "titanium", // or material_id after lookup
+  maxPrice: 5000
+}
+```
+
+This is the core NLP challenge. Options:
+1. **LLM function calling** - Define tools matching `GetProductsParams`, let LLM extract structured params
+2. **Pattern matching + LLM fallback** - Regex for common patterns (prices, categories), LLM for ambiguous cases
+
+**Recommended approach:** LLM function calling with Gemini (already integrated for extraction). Define a `searchProducts` tool schema matching existing query params.
+
+---
+
+## Chatbot Differentiators
+
+Features that set MedCatalog apart. Not expected, but provide competitive advantage.
+
+| Feature | Value Proposition | Complexity | Existing Dependency | Notes |
+|---------|-------------------|------------|---------------------|-------|
+| **Inline price comparison tables** | See vendor prices side-by-side without leaving chat | Medium | `getProductPriceComparison()` RPC function | Render table: vendor, price, SKU - with "lowest" highlight |
+| **Interactive comparison widget** | Select 2-3 products, see specs side-by-side | Medium-High | Product data, similarity search | Table columns: product names, rows: specs |
+| **"Find alternatives" via web search** | Discover EU market alternatives not in catalog | High | WebSearch integration (new) | Search "[product type] EU market alternative" |
+| **Quick filter buttons in response** | "Also filter by: [Titanium] [CE Marked] [Class IIb]" | Low | Existing filter system | Buttons that add filters to current search |
+| **Product cards with actions** | Rich cards: image placeholder, key specs, action buttons | Medium | Product schema | Card with: "Compare prices", "View details", "Find alternatives" |
+| **Save search to URL** | Share current chat-defined filters as URL | Low | Existing URL-based state | Button: "Open in catalog" - copies filters to main view |
+| **EMDN category suggestions** | When search is vague, suggest relevant EMDN categories | Medium | Category tree with names | "Did you mean: [P09 - Implants] or [P10 - Prostheses]?" |
+| **Research prompt generation** | Generate research prompts for procurement | Medium | Already exists in app | "Generate research prompt for this product" button |
+| **Voice input** | Speak queries instead of typing | Medium | Browser Web Speech API | 2026 trend - increasingly expected in B2B tools |
+
+### Implementation Notes for Differentiators
+
+**Inline Price Comparison Tables:**
+The existing `getProductPriceComparison()` function returns:
+```typescript
+interface ProductPriceComparison {
+  id: string;
+  name: string;
+  sku: string;
+  price: number | null;
+  vendor_id: string | null;
+  vendor_name: string | null;
+  emdn_code: string | null;
+  similarity: number;
+}
+```
+
+Render as responsive table in chat:
+```
+| Vendor      | Price (CZK) | SKU        |
+|-------------|-------------|------------|
+| MedSupply*  | 3,200       | HIP-TI-001 |  <- lowest
+| OrthoTech   | 3,450       | OT-HIP-42  |
+| BioMed EU   | 3,890       | BM-7721    |
+```
+
+**"Find Alternatives" via Web Search:**
+This is the highest-complexity differentiator. Implementation approach:
+1. Extract product type and key specs from selected product
+2. Construct search query: "[product type] [material] EU CE marked alternative"
+3. Return curated results with disclaimer: "External results - verify compliance independently"
+
+**Risk:** Web search results may include non-compliant or irrelevant products. Must clearly label as "external suggestions" not catalog data.
+
+---
+
+## Chatbot Anti-Features
+
+Features to deliberately NOT build for v1.2. Common mistakes in this domain.
+
+| Anti-Feature | Why Avoid | What to Do Instead |
+|--------------|-----------|-------------------|
+| **Full-page chat replacement** | Users expect catalog browsing; chat is supplementary | Floating widget that expands/collapses |
+| **Purchase/ordering through chat** | Out of scope for catalog MVP; adds compliance complexity | Link to vendor contact/website for ordering |
+| **User accounts/history persistence** | Adds auth complexity, GDPR considerations | Session-only context; clear on close |
+| **Multi-turn negotiation flows** | Overcomplicates MVP; not expected for catalog search | Single-purpose queries with clear responses |
+| **Autonomous actions** | Don't modify catalog data or submit forms via chat | Read-only queries; link to forms for edits |
+| **Image upload for product matching** | Requires vision model integration, training data | Future feature; focus on text search first |
+| **Real-time inventory/availability** | Catalog is reference data, not live inventory | Show prices only; note "contact vendor for availability" |
+| **Chat export/download** | Low value for v1.2; adds complexity | Session only; "Open in catalog" for shareable links |
+| **Typing indicators/animations** | Premature polish; focus on functionality | Simple loading state is sufficient |
+| **LLM-generated product descriptions** | Risk of hallucination; products have official descriptions | Show catalog data verbatim |
+
+### Why These Are Anti-Features
+
+**Full-page chat replacement:** Research shows B2B buyers prefer visual catalog browsing for comparison shopping. Chat should complement, not replace, the main interface. The existing filter sidebar + data table pattern is more efficient for browsing.
+
+**Purchase/ordering:** Medical device procurement has compliance requirements. Chat should surface information, but ordering should go through proper channels with documentation trails.
+
+**Autonomous actions:** The chatbot should be a query interface, not an agent that modifies data. This keeps the scope manageable and avoids permission/audit complexity.
+
+---
+
+## Chatbot Feature Dependencies
+
+```
+                    [Floating Chat Widget]
+                           |
+                    [Chat State Manager]
+                           |
+          +----------------+----------------+
+          |                |                |
+   [NL Query Parser]  [Response Renderer]  [Context Tracker]
+          |                |                |
+          v                v                v
+   [Existing Queries] [UI Components]   [Session State]
+   - getProducts()    - Product Cards
+   - getVendors()     - Price Tables
+   - getCategories()  - Action Buttons
+   - similarity.ts    - Suggested Prompts
+```
+
+### Dependency Graph (Build Order)
+
+1. **Chat Widget Shell** - Floating button, expand/collapse, basic input
+2. **Message Renderer** - Display chat bubbles, support markdown
+3. **NL Parser (LLM integration)** - Translate queries to filter params
+4. **Product Results Display** - Cards with key info
+5. **Quick Action Buttons** - Post-response interaction options
+6. **Price Comparison Table** - Inline table component
+7. **Web Search Integration** - External alternatives (if included)
+
+---
+
+## Chatbot MVP Recommendation
+
+For MVP (v1.2), prioritize:
+
+### Must Have (Table Stakes)
+1. **Floating chat widget** with expand/collapse
+2. **Natural language search** translating to existing filters
+3. **Product results as cards** with name, SKU, price, vendor
+4. **Suggested starter prompts** (3-5 examples)
+5. **Quick action buttons** after responses
+6. **Price comparison table** (leverages existing RPC)
+
+### Should Have (Key Differentiators)
+7. **EMDN category suggestions** when query is ambiguous
+8. **"Open in catalog" button** to apply filters to main view
+
+### Defer to Post-MVP
+- **Web search for alternatives** - High complexity, compliance concerns
+- **Voice input** - Nice-to-have, not blocking
+- **Interactive multi-product comparison widget** - Complex UI, v1.3
+- **Research prompt generation in chat** - Exists elsewhere, can link
+
+---
+
+## UI Pattern Examples
+
+### Quick Action Buttons
+
+After showing search results:
+```
+[Compare prices] [Filter by CE marked] [Show in catalog] [New search]
+```
+
+After showing price comparison:
+```
+[View cheapest] [Find alternatives] [New search]
+```
+
+After product details:
+```
+[Compare with similar] [Show vendor contact] [Back to results]
+```
+
+### Suggested Starter Prompts
+
+```
+"Titanium hip implants under 5000 CZK"
+"Compare prices for knee prostheses"
+"CE marked spinal fixation devices"
+"Products from vendor MedSupply"
+"Class IIb orthopedic implants"
+```
+
+### Price Comparison Table (Inline)
+
+```
+Prices for: Titanium Hip Stem (3 vendors)
+
+| Vendor        | Price     | SKU          |
+|---------------|-----------|--------------|
+| MedSupply EU  | 3,200 CZK | MS-HIP-001   | [Best price]
+| OrthoTech CZ  | 3,450 CZK | OT-4521      |
+| BioMed Praha  | 3,890 CZK | BM-HIP-77    |
+
+[View MedSupply product] [Find alternatives] [New search]
+```
+
+### Product Card (Compact)
+
+```
++------------------------------------------+
+| Titanium Hip Stem Pro                    |
+| SKU: HIP-TI-PRO-001                      |
+| Price: 3,200 CZK | Vendor: MedSupply EU  |
+| EMDN: P090201 | CE Marked | Class IIb    |
++------------------------------------------+
+[Compare prices] [Details] [Similar products]
+```
+
+---
+
+## Confidence Assessment
+
+| Area | Confidence | Reason |
+|------|------------|--------|
+| Chatbot table stakes | HIGH | Industry patterns well-established; existing codebase has supporting infrastructure |
+| Chatbot differentiators | MEDIUM | Inline tables and buttons are proven patterns; web search integration is speculative |
+| Chatbot anti-features | HIGH | Clear scope boundaries based on B2B catalog norms and compliance considerations |
+| Complexity estimates | MEDIUM | Depends on Gemini function calling capabilities; may need adjustment |
+
+---
+
+## Chatbot Sources
+
+### Industry Patterns and UX Best Practices
+- [Chatbot UX Design: Complete Guide (2025)](https://www.parallelhq.com/blog/chatbot-ux-design)
+- [Prompt Controls in GenAI Chatbots: 4 Main Uses and Best Practices - NN/G](https://www.nngroup.com/articles/prompt-controls-genai/)
+- [Chatbot UX Best Practices for E-commerce Search - Toptal](https://www.toptal.com/designers/chatbot/chatbot-ux-best-practices)
+- [15 Chatbot UI examples for designing an effective user interface - Sendbird](https://sendbird.com/blog/chatbot-ui)
+
+### Interactive Components and Generative UI
+- [Revolutionizing chatbot interactions with Generative UI - Monterail](https://www.monterail.com/blog/revolutionizing-chatbot-interactions-with-generative-ui)
+- [LLM ChatBots 3.0: Merging LLMs with Dynamic UI Elements - Hugging Face](https://huggingface.co/blog/airabbitX/llm-chatbots-30)
+- [31 Chatbot UI Examples from Product Designers - Eleken](https://www.eleken.co/blog-posts/chatbot-ui-examples)
+
+### E-commerce and Product Discovery
+- [The 2025 Guide to Implementing Conversational AI in eCommerce - eDesk](https://www.edesk.com/blog/conversational-ai-in-ecommerce/)
+- [Product Recommendation Chatbots: How to Use AI to Sell - Botpress](https://botpress.com/blog/product-recommendation-chatbot)
+- [10 Best AI Chatbots for Ecommerce Brands in 2026 - Tolstoy](https://www.gotolstoy.com/blog/ai-chatbots-for-ecommerce)
+
+### B2B Medical Device Platforms
+- [Grow your Medical Device Business with these 12 B2B Ecommerce Features - Cloudfy](https://www.cloudfy.com/articles/grow-your-medical-device-business-with-these-12-b2b-ecommerce-features/)
+- [B2B Ecommerce Portal for Medical Devices Industry - Cloudfy](https://www.cloudfy.com/solutions/sector/medical-devices/)
+
+### AI Shopping Assistants and Price Comparison
+- [6 Best AI Shopping Assistants for 2026: A Comparison - Ringly](https://www.ringly.io/blog/ai-shopping-assistants)
+- [Why the AI shopping agent wars will heat up in 2026 - Modern Retail](https://www.modernretail.co/technology/why-the-ai-shopping-agent-wars-will-heat-up-in-2026/)
+- [Introducing shopping research in ChatGPT - OpenAI](https://openai.com/index/chatgpt-shopping-research/)
+
+### Existing Codebase (LOCAL - HIGH confidence)
+- `src/lib/queries.ts` - Product query infrastructure with filters
+- `src/lib/actions/similarity.ts` - Price comparison and similarity search RPC
+- `src/lib/schemas/product.ts` - Product data structure
+- `src/lib/schemas/extraction.ts` - AI extraction patterns (Gemini integration)
+
+---
 *Feature research for: Medical Product Catalog / Procurement System*
-*Researched: 2026-02-02*
+*Chatbot milestone researched: 2026-02-05*

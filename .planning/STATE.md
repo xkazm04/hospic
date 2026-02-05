@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-02-05)
 
 **Core value:** Procurement can quickly compare prices for identical orthopedic products across multiple vendors
-**Current focus:** Milestone v1.2 - Chatbot Interface (Phase 11: External Web Search)
+**Current focus:** Milestone v1.2 - Chatbot Interface (Phase 12: UI Polish and Integration)
 
 ## Current Position
 
-Phase: 11 of 12 (External Web Search)
-Plan: 2 of 2 complete
-Status: Phase complete
-Last activity: 2026-02-05 - Completed 11-02-PLAN.md
+Phase: 12 of 12 (UI Polish and Integration)
+Plan: 1 of 2 complete
+Status: In progress
+Last activity: 2026-02-05 - Completed 12-01-PLAN.md
 
-Progress: [##########] 100% (2/2 plans complete in Phase 11)
+Progress: [#####-----] 50% (1/2 plans complete in Phase 12)
 
 ## Milestone History
 
@@ -88,6 +88,12 @@ v1.2 decisions (implemented in 11-02):
 - Silent URL filtering - broken/invalid source links are hidden, not shown with warnings
 - No action buttons on external cards (user clicks through to source for details)
 
+v1.2 decisions (implemented in 12-01):
+
+- Use status === 'submitted' for typing indicator (before first token)
+- 3 feature-showcasing starter prompts (search, compare, alternatives)
+- StarterPrompts disappear after first message via messages.length check
+
 ### Technical Debt
 
 - Permissive RLS policies need tightening when auth is added
@@ -103,7 +109,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-05T14:35:00Z
-Stopped at: Completed 11-02-PLAN.md
+Last session: 2026-02-05T15:10:00Z
+Stopped at: Completed 12-01-PLAN.md
 Resume file: None
-Next action: Phase 11 complete - ready for Phase 12
+Next action: Execute 12-02-PLAN.md (Quick actions and catalog integration)

@@ -34,11 +34,11 @@ MedCatalog v1.2 adds a conversational AI interface to the orthopedic product cat
   3. User can type a message and send it with button or Enter key
   4. AI response streams in real-time (text appears incrementally, not all at once)
   5. Closing chat during streaming cleanly aborts the connection (no memory leaks)
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 08-01: TBD
-- [ ] 08-02: TBD
+- [ ] 08-01-PLAN.md - Streaming infrastructure (Vercel AI SDK + API route)
+- [ ] 08-02-PLAN.md - Chat widget UI (components + page integration)
 
 ### Phase 9: Catalog Search Tools
 **Goal**: Users can search the product catalog via natural language and get structured results
@@ -104,7 +104,7 @@ Plans:
 
 | Phase | Milestone | Plans Complete | Status | Completed |
 |-------|-----------|----------------|--------|-----------|
-| 8. Streaming Foundation | v1.2 | 0/? | Not started | - |
+| 8. Streaming Foundation | v1.2 | 0/2 | Planned | - |
 | 9. Catalog Search Tools | v1.2 | 0/? | Not started | - |
 | 10. Context and Error Handling | v1.2 | 0/? | Not started | - |
 | 11. External Web Search | v1.2 | 0/? | Not started | - |

@@ -8,6 +8,7 @@ import { ComparisonTable } from './comparison-table';
 import { CategoryChips } from './category-chips';
 import { LoadingSpinner } from './loading-spinner';
 import { StarterPrompts } from './starter-prompts';
+import { QuickActions } from './quick-actions';
 import type { UIMessage } from 'ai';
 import type { ProductWithRelations } from '@/lib/types';
 import type { ProductPriceComparison } from '@/lib/actions/similarity';
@@ -19,6 +20,9 @@ interface MessageListProps {
   onCategorySelect: (categoryId: string, categoryName: string) => void;
   onViewInCatalog: (productId: string) => void;
   onSendMessage: (text: string) => void;
+  onCompareResults: () => void;
+  onShowMore: () => void;
+  onFilterVendor: () => void;
 }
 
 // Type guards for tool parts
@@ -70,6 +74,9 @@ export function MessageList({
   onCategorySelect,
   onViewInCatalog,
   onSendMessage,
+  onCompareResults,
+  onShowMore,
+  onFilterVendor,
 }: MessageListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -115,6 +122,14 @@ export function MessageList({
               ))}
               {toolPart.output.products.length === 0 && (
                 <p className="text-sm text-muted-foreground">No products found.</p>
+              )}
+              {toolPart.output.products.length > 0 && (
+                <QuickActions
+                  productCount={toolPart.output.products.length}
+                  onCompare={onCompareResults}
+                  onShowMore={onShowMore}
+                  onFilterVendor={onFilterVendor}
+                />
               )}
             </div>
           );

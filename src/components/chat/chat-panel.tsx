@@ -90,6 +90,18 @@ export function ChatPanel({ isOpen }: ChatPanelProps) {
     // Could open product detail modal or scroll to product in table
   };
 
+  const handleCompareResults = () => {
+    sendMessage({ text: 'Compare prices for these products' });
+  };
+
+  const handleShowMore = () => {
+    sendMessage({ text: 'Show more results' });
+  };
+
+  const handleFilterVendor = () => {
+    sendMessage({ text: 'Filter by vendor' });
+  };
+
   return (
     <div className="flex flex-col h-full">
       <MessageList
@@ -99,6 +111,9 @@ export function ChatPanel({ isOpen }: ChatPanelProps) {
         onCategorySelect={handleCategorySelect}
         onViewInCatalog={handleViewInCatalog}
         onSendMessage={handleSubmit}
+        onCompareResults={handleCompareResults}
+        onShowMore={handleShowMore}
+        onFilterVendor={handleFilterVendor}
       />
       {showTypingIndicator && <TypingIndicator />}
       {showError && classifiedError && (

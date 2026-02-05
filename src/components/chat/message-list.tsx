@@ -18,7 +18,7 @@ interface MessageListProps {
   isStreaming: boolean;
   onComparePrice: (productId: string) => void;
   onCategorySelect: (categoryId: string, categoryName: string) => void;
-  onViewInCatalog: (productId: string) => void;
+  onViewInCatalog: (product: ProductWithRelations) => void;
   onSendMessage: (text: string) => void;
   onCompareResults: () => void;
   onShowMore: () => void;

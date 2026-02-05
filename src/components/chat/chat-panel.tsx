@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useChat } from '@ai-sdk/react';
 import { MessageList } from './message-list';
 import { ChatInput } from './chat-input';
@@ -8,12 +9,15 @@ import { ErrorBubble } from './error-bubble';
 import { TypingIndicator } from './typing-indicator';
 import { classifyError } from '@/lib/chat/errors';
 import { MAX_MESSAGES } from '@/lib/chat/constants';
+import type { ProductWithRelations } from '@/lib/types';
 
 interface ChatPanelProps {
   isOpen: boolean;
 }
 
 export function ChatPanel({ isOpen }: ChatPanelProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { messages, sendMessage, status, stop, error, setMessages, regenerate, clearError } = useChat();
   const [retryAttempted, setRetryAttempted] = useState(false);
 
@@ -84,10 +88,28 @@ export function ChatPanel({ isOpen }: ChatPanelProps) {
     sendMessage({ text: `Search in category: ${categoryName}` });
   };
 
-  const handleViewInCatalog = (productId: string) => {
-    // For now, just log - full catalog integration is Phase 12
-    console.log('View in catalog:', productId);
-    // Could open product detail modal or scroll to product in table
+  const handleViewInCatalog = (product: ProductWithRelations) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    // Apply filters based on product attributes
+    if (product.vendor?.id) {
+      params.set('vendor', product.vendor.id);
+    }
+    if (product.emdn_category?.id) {
+      params.set('category', product.emdn_category.id);
+    }
+    params.set('page', '1');
+
+    // Update URL (triggers table re-filter)
+    router.push(`?${params.toString()}`);
+
+    // Smooth scroll to table after short delay for URL change
+    setTimeout(() => {
+      document.querySelector('[data-table-container]')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }, 100);
   };
 
   const handleCompareResults = () => {

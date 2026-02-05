@@ -90,7 +90,7 @@ export function CatalogClient({
       />
 
       {/* Data table with loading overlay - uses CSS instead of motion for better performance */}
-      <div className="relative">
+      <div className="relative" data-table-container>
         <div
           className="transition-opacity duration-150"
           style={{ opacity: isTransitioning ? 0.6 : 1 }}

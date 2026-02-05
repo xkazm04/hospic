@@ -9,7 +9,7 @@ import type { ProductWithRelations } from '@/lib/types';
 interface ProductCardProps {
   product: ProductWithRelations;
   onCompare: (productId: string) => void;
-  onViewInCatalog: (productId: string) => void;
+  onViewInCatalog: (product: ProductWithRelations) => void;
 }
 
 export function ProductCard({ product, onCompare, onViewInCatalog }: ProductCardProps) {
@@ -64,10 +64,10 @@ export function ProductCard({ product, onCompare, onViewInCatalog }: ProductCard
           Compare prices
         </button>
         <button
-          onClick={() => onViewInCatalog(product.id)}
+          onClick={() => onViewInCatalog(product)}
           className="text-xs px-2 py-1 bg-muted hover:bg-muted/80 rounded"
         >
-          View in catalog
+          Open in catalog
         </button>
       </div>
     </motion.div>

@@ -3,6 +3,7 @@
 import { useRef, useEffect } from 'react';
 import { MessageBubble } from './message-bubble';
 import { ProductCard } from './product-card';
+import { ExternalProductCard } from './external-product-card';
 import { ComparisonTable } from './comparison-table';
 import { CategoryChips } from './category-chips';
 import { LoadingSpinner } from './loading-spinner';
@@ -47,6 +48,17 @@ interface CategorySuggestion {
 interface SuggestCategoriesOutput {
   suggestions: CategorySuggestion[];
   totalProducts: number;
+}
+
+interface ExternalSearchOutput {
+  summary: string;
+  sources: Array<{
+    url: string;
+    title: string;
+    domain: string;
+  }>;
+  searchQueries: string[];
+  hasResults: boolean;
 }
 
 export function MessageList({
@@ -129,6 +141,64 @@ export function MessageList({
           );
         }
         return <LoadingSpinner key={toolPart.toolCallId} text="Finding categories..." />;
+      }
+
+      case 'tool-searchExternalProducts': {
+        if (!isToolPart(part)) return null;
+        const toolPart = part as ToolPartBase & { output?: ExternalSearchOutput };
+
+        // Loading state
+        if (toolPart.state !== 'output-available' || !toolPart.output) {
+          return (
+            <LoadingSpinner
+              key={toolPart.toolCallId}
+              text="Searching the web for alternatives..."
+            />
+          );
+        }
+
+        // No results
+        if (!toolPart.output.hasResults) {
+          return (
+            <p key={toolPart.toolCallId} className="text-sm text-muted-foreground">
+              No external alternatives found. Try a different product or broader category.
+            </p>
+          );
+        }
+
+        // Filter out sources with invalid URLs (broken link handling per CONTEXT.md line 26)
+        const validSources = toolPart.output.sources.filter((source) => {
+          if (!source.url || source.url.trim() === '') return false;
+          try {
+            new URL(source.url);
+            return true;
+          } catch {
+            return false;
+          }
+        });
+
+        // If all sources were invalid, show no-results state
+        if (validSources.length === 0) {
+          return (
+            <p key={toolPart.toolCallId} className="text-sm text-muted-foreground">
+              No external alternatives found. Try a different product or broader category.
+            </p>
+          );
+        }
+
+        // Results with cards
+        return (
+          <div key={toolPart.toolCallId} className="space-y-2">
+            {validSources.map((source, idx) => (
+              <ExternalProductCard
+                key={`${toolPart.toolCallId}-${idx}`}
+                name={source.title}
+                sourceUrl={source.url}
+                sourceDomain={source.domain}
+              />
+            ))}
+          </div>
+        );
       }
 
       default:

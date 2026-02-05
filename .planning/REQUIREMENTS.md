@@ -1,48 +1,52 @@
-# Requirements: MedCatalog
+# Requirements: MedCatalog v1.2
 
-**Defined:** 2026-02-02
+**Defined:** 2026-02-05
 **Core Value:** Procurement can quickly compare prices for identical orthopedic products across multiple vendors
 
-## v1.1 Requirements
+## v1.2 Requirements
 
-Requirements for v1.1 release. Each maps to roadmap phases.
+Requirements for v1.2 release. Each maps to roadmap phases.
 
-### Research Prompt Generator
+### Chat Widget
 
-- [x] **RSRCH-01**: User can generate structured research prompt from product detail view
-- [x] **RSRCH-02**: Prompt template includes product specs, manufacturer, SKU for EU vendor search
-- [x] **RSRCH-03**: User can copy generated prompt to clipboard with one click
-- [x] **RSRCH-04**: User can open Perplexity in new tab with prompt ready to paste
-- [x] **RSRCH-05**: Prompt output format is documented for consistent comparison data entry
+- [ ] **CHAT-01**: User can open floating chat widget from catalog page (bottom-right button)
+- [ ] **CHAT-02**: Chat panel slides out with smooth animation
+- [ ] **CHAT-03**: User can close chat panel (returns to floating button)
+- [ ] **CHAT-04**: Chat displays streaming text responses from Gemini
+- [ ] **CHAT-05**: User sees typing indicator while AI is responding
+- [ ] **CHAT-06**: Chat shows suggested starter prompts on open
+- [ ] **CHAT-07**: User can type message and send with button or Enter key
 
-### Bulk Import
+### Product Search
 
-- [x] **IMPORT-01**: User can upload CSV file for bulk product import
-- [x] **IMPORT-02**: System parses CSV and shows column mapping preview
-- [x] **IMPORT-03**: User can map CSV columns to product schema fields
-- [x] **IMPORT-04**: System validates data before import (required fields, format)
-- [x] **IMPORT-05**: System deduplicates by SKU (warns on existing, option to update)
-- [x] **IMPORT-06**: User sees import progress and summary (created, updated, skipped)
+- [ ] **SRCH-01**: User can search products via natural language query
+- [ ] **SRCH-02**: AI translates natural language to catalog filters
+- [ ] **SRCH-03**: Matching products display as cards in chat
+- [ ] **SRCH-04**: User can filter by category, vendor, price, material via chat
+- [ ] **SRCH-05**: Quick action buttons appear after product results ("Compare prices", "Show more", "Filter by vendor")
+- [ ] **SRCH-06**: AI suggests EMDN categories when query is ambiguous
+- [ ] **SRCH-07**: User can click "Open in catalog" to apply chat filters to main table
 
-### Schema Extension
+### Price Comparison
 
-- [x] **SCHEMA-01**: Products table has `manufacturer_name` field
-- [x] **SCHEMA-02**: Products table has `manufacturer_sku` field
-- [x] **SCHEMA-03**: Migration script adds fields without data loss
-- [x] **SCHEMA-04**: Product detail and forms display manufacturer info
+- [ ] **COMP-01**: User can request price comparison for a product
+- [ ] **COMP-02**: Comparison displays as inline table in chat response
+- [ ] **COMP-03**: Table shows product name, vendors, and prices side-by-side
 
-### Navigation
+### Alternative Discovery
 
-- [x] **NAV-01**: EMDN categories display as collapsible tree in filter sidebar
-- [x] **NAV-02**: User can expand/collapse category levels
-- [x] **NAV-03**: Selecting a parent category filters to all descendants
-- [x] **NAV-04**: Current category path shows breadcrumb in filter
+- [ ] **ALT-01**: User can request alternatives for a product
+- [ ] **ALT-02**: AI uses web search to find EU market alternatives
+- [ ] **ALT-03**: External suggestions display with source citations
+- [ ] **ALT-04**: Results clearly labeled as "external" (not from catalog)
 
-### Performance
+### Infrastructure
 
-- [x] **PERF-01**: Catalog table handles 1000+ products without lag
-- [x] **PERF-02**: EMDN tree lazy-loads children on expand
-- [x] **PERF-03**: Database indexes optimized for new fields
+- [ ] **INFRA-01**: Chat uses Vercel AI SDK for streaming
+- [ ] **INFRA-02**: Proper SSE connection cleanup prevents memory leaks
+- [ ] **INFRA-03**: Tool calling wraps existing queries (getProducts, findSimilar, comparePrices)
+- [ ] **INFRA-04**: Context management prevents token exhaustion in long conversations
+- [ ] **INFRA-05**: Graceful error handling with fallback messages
 
 ## Out of Scope
 
@@ -50,11 +54,12 @@ Explicitly excluded. Documented to prevent scope creep.
 
 | Feature | Reason |
 |---------|--------|
-| Real-time Perplexity API integration | Manual copy-paste workflow is more flexible and doesn't require API key |
-| Multi-file upload | Single CSV at a time is sufficient for v1.1 |
-| Excel (.xlsx) import | CSV is universal; Excel adds dependency complexity |
-| Background import jobs | Synchronous import with progress is sufficient for ~1000 products |
-| Virtual scrolling | Standard pagination handles 1000+ products; defer to v1.2 if needed |
+| Voice input | Nice-to-have, adds complexity without blocking value |
+| Chat history persistence | Ephemeral chat is sufficient for v1.2 |
+| Full-page chat replacement | Chat supplements catalog, doesn't replace it |
+| Multi-product comparison widget | Complex UI, defer to v1.3 |
+| Product mutations via chat | Read-only design keeps scope manageable |
+| Mobile-optimized chat | Desktop-first, mobile can work but not optimized |
 
 ## Traceability
 
@@ -62,34 +67,38 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SCHEMA-01 | Phase 5 | Complete |
-| SCHEMA-02 | Phase 5 | Complete |
-| SCHEMA-03 | Phase 5 | Complete |
-| SCHEMA-04 | Phase 5 | Complete |
-| NAV-01 | Phase 5 | Complete |
-| NAV-02 | Phase 5 | Complete |
-| NAV-03 | Phase 5 | Complete |
-| NAV-04 | Phase 5 | Complete |
-| PERF-01 | Phase 5 | Human Verification |
-| PERF-02 | Phase 5 | Complete |
-| PERF-03 | Phase 5 | Complete |
-| IMPORT-01 | Phase 6 | Complete |
-| IMPORT-02 | Phase 6 | Complete |
-| IMPORT-03 | Phase 6 | Complete |
-| IMPORT-04 | Phase 6 | Complete |
-| IMPORT-05 | Phase 6 | Complete |
-| IMPORT-06 | Phase 6 | Complete |
-| RSRCH-01 | Phase 7 | Complete |
-| RSRCH-02 | Phase 7 | Complete |
-| RSRCH-03 | Phase 7 | Complete |
-| RSRCH-04 | Phase 7 | Complete |
-| RSRCH-05 | Phase 7 | Complete |
+| CHAT-01 | Phase 8 | Pending |
+| CHAT-02 | Phase 8 | Pending |
+| CHAT-03 | Phase 8 | Pending |
+| CHAT-04 | Phase 8 | Pending |
+| CHAT-05 | Phase 12 | Pending |
+| CHAT-06 | Phase 12 | Pending |
+| CHAT-07 | Phase 8 | Pending |
+| SRCH-01 | Phase 9 | Pending |
+| SRCH-02 | Phase 9 | Pending |
+| SRCH-03 | Phase 9 | Pending |
+| SRCH-04 | Phase 9 | Pending |
+| SRCH-05 | Phase 12 | Pending |
+| SRCH-06 | Phase 9 | Pending |
+| SRCH-07 | Phase 12 | Pending |
+| COMP-01 | Phase 9 | Pending |
+| COMP-02 | Phase 9 | Pending |
+| COMP-03 | Phase 9 | Pending |
+| ALT-01 | Phase 11 | Pending |
+| ALT-02 | Phase 11 | Pending |
+| ALT-03 | Phase 11 | Pending |
+| ALT-04 | Phase 11 | Pending |
+| INFRA-01 | Phase 8 | Pending |
+| INFRA-02 | Phase 8 | Pending |
+| INFRA-03 | Phase 9 | Pending |
+| INFRA-04 | Phase 10 | Pending |
+| INFRA-05 | Phase 10 | Pending |
 
 **Coverage:**
-- v1.1 requirements: 18 total
-- Mapped to phases: 18
+- v1.2 requirements: 26 total
+- Mapped to phases: 26
 - Unmapped: 0 ✓
 
 ---
-*Requirements defined: 2026-02-02*
-*Last updated: 2026-02-02 after Phase 7 completion*
+*Requirements defined: 2026-02-05*
+*Last updated: 2026-02-05 after initial definition*

@@ -2,7 +2,7 @@
 
 import { NextIntlClientProvider, AbstractIntlMessages } from 'next-intl';
 import { useEffect, type ReactNode } from 'react';
-import { type Locale } from '@/i18n/config';
+import { setLocaleCookie, type Locale } from '@/i18n/config';
 
 interface LocaleProviderProps {
   children: ReactNode;
@@ -22,7 +22,7 @@ export function LocaleProvider({ children, locale, messages }: LocaleProviderPro
 
     if (storedLocale && storedLocale !== locale) {
       // User has a different preference stored - sync cookie and reload
-      document.cookie = `NEXT_LOCALE=${storedLocale};path=/;max-age=31536000;SameSite=Lax`;
+      setLocaleCookie(storedLocale as Locale);
       window.location.reload();
     } else if (!storedLocale) {
       // No stored preference - save the current locale

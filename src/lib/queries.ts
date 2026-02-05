@@ -2,65 +2,6 @@ import { createClient } from "@/lib/supabase/server";
 import { checkCircuit, CircuitBreakerError } from "@/lib/supabase/circuit-breaker";
 import type { EMDNCategory, Material, ProductWithRelations, Vendor } from "@/lib/types";
 
-// Mock data for when Supabase is not configured
-const MOCK_VENDORS: Vendor[] = [
-  { id: "v1", name: "DePuy Synthes", code: "DEPUY", website: "https://depuysynthes.com", created_at: "2024-01-01", updated_at: "2024-01-01" },
-  { id: "v2", name: "Stryker", code: "STRYKER", website: "https://stryker.com", created_at: "2024-01-01", updated_at: "2024-01-01" },
-];
-
-const MOCK_MATERIALS: Material[] = [
-  { id: "m1", name: "Titanium Alloy", code: "TI6AL4V" },
-  { id: "m2", name: "Cobalt Chrome", code: "COCR" },
-];
-
-const MOCK_CATEGORIES: EMDNCategory[] = [
-  { id: "c1", code: "P09", name: "Orthopaedic and prosthetic devices", parent_id: null, depth: 0, path: "P09", created_at: "2024-01-01" },
-  { id: "c2", code: "P0901", name: "Orthopaedic bone implants", parent_id: "c1", depth: 1, path: "P09/P0901", created_at: "2024-01-01" },
-];
-
-const MOCK_PRODUCTS: ProductWithRelations[] = [
-  {
-    id: "p1",
-    name: "Hip Stem Titanium - Standard",
-    sku: "HS-TI-001",
-    description: "Primary hip stem implant made from titanium alloy, suitable for cemented or press-fit fixation",
-    price: 2450.00,
-    vendor_id: "v1",
-    emdn_category_id: "c2",
-    material_id: "m1",
-    udi_di: "00850123456789",
-    ce_marked: true,
-    mdr_class: "IIb",
-    manufacturer_name: "DePuy Synthes Inc.",
-    manufacturer_sku: "HS-001-TI",
-    created_at: "2024-01-15",
-    updated_at: "2024-01-15",
-    vendor: MOCK_VENDORS[0],
-    emdn_category: MOCK_CATEGORIES[1],
-    material: MOCK_MATERIALS[0],
-  },
-  {
-    id: "p2",
-    name: "Knee Replacement System - Total",
-    sku: "KR-COCR-002",
-    description: "Complete knee replacement system with femoral component, tibial baseplate, and polyethylene insert",
-    price: 4890.00,
-    vendor_id: "v2",
-    emdn_category_id: "c2",
-    material_id: "m2",
-    udi_di: "00850987654321",
-    ce_marked: true,
-    mdr_class: "III",
-    manufacturer_name: "Stryker Corporation",
-    manufacturer_sku: "KRS-002-COCR",
-    created_at: "2024-01-20",
-    updated_at: "2024-01-20",
-    vendor: MOCK_VENDORS[1],
-    emdn_category: MOCK_CATEGORIES[1],
-    material: MOCK_MATERIALS[1],
-  },
-];
-
 export interface GetProductsParams {
   page?: number;
   pageSize?: number;
@@ -132,11 +73,16 @@ export async function getProducts(params: GetProductsParams = {}): Promise<GetPr
       { count: "exact" }
     );
 
-  // Apply search filter
+  // Apply search filter using ILIKE on indexed columns
   if (search) {
-    query = query.or(
-      `name.ilike.%${search}%,description.ilike.%${search}%,sku.ilike.%${search}%`
-    );
+    const searchQuery = search.trim();
+    if (searchQuery) {
+      // Search across name, SKU, description, and manufacturer name
+      // Uses the idx_products_fulltext GIN index for performance
+      query = query.or(
+        `name.ilike.%${searchQuery}%,sku.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,manufacturer_name.ilike.%${searchQuery}%`
+      );
+    }
   }
 
   // Apply vendor filter (comma-separated IDs)
@@ -213,9 +159,8 @@ export async function getProducts(params: GetProductsParams = {}): Promise<GetPr
   const { data, count, error } = await query;
 
   if (error) {
-    console.error("Error fetching products (using mock data):", error.message);
-    // Return mock data when Supabase is not configured
-    return { data: MOCK_PRODUCTS, count: MOCK_PRODUCTS.length, error: null };
+    console.error("Error fetching products:", error.message);
+    throw new Error(`Failed to fetch products: ${error.message}`);
   }
 
   return {
@@ -235,8 +180,8 @@ export async function getVendors(): Promise<Vendor[]> {
     .order("name");
 
   if (error) {
-    console.error("Error fetching vendors (using mock data):", error.message);
-    return MOCK_VENDORS;
+    console.error("Error fetching vendors:", error.message);
+    throw new Error(`Failed to fetch vendors: ${error.message}`);
   }
 
   return data || [];
@@ -252,8 +197,8 @@ export async function getMaterials(): Promise<Material[]> {
     .order("name");
 
   if (error) {
-    console.error("Error fetching materials (using mock data):", error.message);
-    return MOCK_MATERIALS;
+    console.error("Error fetching materials:", error.message);
+    throw new Error(`Failed to fetch materials: ${error.message}`);
   }
 
   return data || [];
@@ -269,8 +214,8 @@ export async function getEMDNCategoriesFlat(): Promise<EMDNCategory[]> {
     .order("code");
 
   if (error) {
-    console.error("Error fetching EMDN categories (using mock data):", error.message);
-    return MOCK_CATEGORIES;
+    console.error("Error fetching EMDN categories:", error.message);
+    throw new Error(`Failed to fetch EMDN categories: ${error.message}`);
   }
 
   return data || [];
@@ -279,6 +224,21 @@ export async function getEMDNCategoriesFlat(): Promise<EMDNCategory[]> {
 export interface CategoryNode extends EMDNCategory {
   children: CategoryNode[];
   productCount: number;
+  name_cs?: string | null; // Czech translation (matches EMDNCategory type)
+}
+
+/**
+ * Get localized category name based on locale
+ * Falls back to English name if Czech translation not available
+ */
+export function getLocalizedCategoryName(
+  category: { name: string; name_cs?: string | null },
+  locale?: string
+): string {
+  if (locale === 'cs' && category.name_cs) {
+    return category.name_cs;
+  }
+  return category.name;
 }
 
 /**
@@ -290,10 +250,10 @@ export async function getEMDNCategories(): Promise<CategoryNode[]> {
   checkCircuit();
   const supabase = await createClient();
 
-  // Try to use materialized view first (fast path)
+  // Try to use materialized view first (fast path) - includes Czech i18n
   const { data: matViewData, error: matViewError } = await supabase
     .from("category_product_counts")
-    .select("id, code, name, parent_id, path, depth, total_count")
+    .select("id, code, name, name_cs, parent_id, path, depth, total_count")
     .gt("total_count", 0)
     .order("code");
 
@@ -312,6 +272,7 @@ function buildTreeFromMatView(data: Array<{
   id: string;
   code: string;
   name: string;
+  name_cs?: string;
   parent_id: string | null;
   path: string;
   depth: number;
@@ -326,6 +287,7 @@ function buildTreeFromMatView(data: Array<{
       id: row.id,
       code: row.code,
       name: row.name,
+      name_cs: row.name_cs,
       parent_id: row.parent_id,
       path: row.path,
       depth: row.depth,
@@ -359,11 +321,8 @@ async function computeCategoryTreeFallback(
     .order("code");
 
   if (catError) {
-    console.error("Error fetching EMDN categories (using mock data):", catError.message);
-    const mockRoot: CategoryNode = { ...MOCK_CATEGORIES[0], children: [], productCount: 0 };
-    const mockChild: CategoryNode = { ...MOCK_CATEGORIES[1], children: [], productCount: 0 };
-    mockRoot.children.push(mockChild);
-    return [mockRoot];
+    console.error("Error fetching EMDN categories:", catError.message);
+    throw new Error(`Failed to fetch EMDN categories: ${catError.message}`);
   }
 
   // Get product counts per category
@@ -482,7 +441,7 @@ export async function getManufacturers(): Promise<string[]> {
 
   if (error) {
     console.error("Error fetching manufacturers:", error.message);
-    return ["DePuy Synthes Inc.", "Stryker Corporation"];
+    throw new Error(`Failed to fetch manufacturers: ${error.message}`);
   }
 
   // Extract unique manufacturer names

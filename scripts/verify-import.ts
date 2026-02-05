@@ -48,7 +48,7 @@ async function verify() {
 
   console.log(`\n📦 Sample Products:`)
   if (samples) {
-    samples.forEach((p: any, i: number) => {
+    samples.forEach((p: { name: string; sku: string; manufacturer_name: string | null; vendor?: { name: string } }, i: number) => {
       console.log(`\n   ${i + 1}. ${p.name}`)
       console.log(`      SKU: ${p.sku}`)
       console.log(`      Manufacturer: ${p.manufacturer_name || 'N/A'}`)

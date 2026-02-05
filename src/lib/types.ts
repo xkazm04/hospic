@@ -11,6 +11,7 @@ export interface EMDNCategory {
   id: string;
   code: string;
   name: string;
+  name_cs?: string | null; // Czech translation for i18n
   parent_id: string | null;
   depth: number;
   path: string | null;

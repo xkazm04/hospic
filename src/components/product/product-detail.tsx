@@ -5,6 +5,7 @@ import { ProductWithRelations } from '@/lib/types'
 import { EMDNBreadcrumb } from './emdn-breadcrumb'
 import { RegulatoryInfo } from './regulatory-info'
 import { ResearchPrompt } from './research-prompt'
+import { formatPrice } from '@/lib/utils/format-price'
 
 interface ProductDetailProps {
   product: ProductWithRelations
@@ -20,7 +21,7 @@ export function ProductDetail({ product }: ProductDetailProps) {
   const infoItems: string[] = []
   if (product.vendor?.name) infoItems.push(product.vendor.name)
   if (product.price !== null) {
-    infoItems.push(`${product.price.toLocaleString(locale === 'cs' ? 'cs-CZ' : 'en-US')} CZK`)
+    infoItems.push(formatPrice(product.price, locale))
   }
   if (product.manufacturer_name) infoItems.push(product.manufacturer_name)
 

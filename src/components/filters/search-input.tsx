@@ -1,18 +1,19 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useDebounceValue } from "usehooks-ts";
 import { Search, X, Loader2 } from "lucide-react";
+import { useUrlFilter } from "@/lib/hooks/use-url-filter";
 
 export function SearchInput() {
   const t = useTranslations('filters');
   const tCommon = useTranslations('common');
-  const router = useRouter();
   const searchParams = useSearchParams();
   const inputRef = useRef<HTMLInputElement>(null);
-  const [value, setValue] = useState(searchParams.get("search") || "");
+  const [currentSearch, setSearch] = useUrlFilter("search");
+  const [value, setValue] = useState(currentSearch);
   const [debouncedValue] = useDebounceValue(value, 300);
   const [isSearching, setIsSearching] = useState(false);
   const isInitialMount = useRef(true);
@@ -23,28 +24,18 @@ export function SearchInput() {
       return;
     }
 
-    const params = new URLSearchParams(searchParams.toString());
-    const currentSearch = params.get("search") || "";
-
     if (currentSearch === debouncedValue) {
       setIsSearching(false);
       return;
     }
 
     setIsSearching(true);
-
-    if (debouncedValue) {
-      params.set("search", debouncedValue);
-    } else {
-      params.delete("search");
-    }
-    params.set("page", "1");
-    router.push(`?${params.toString()}`);
+    setSearch(debouncedValue || null);
 
     // Reset loading after navigation
     const timeout = setTimeout(() => setIsSearching(false), 500);
     return () => clearTimeout(timeout);
-  }, [debouncedValue, router, searchParams]);
+  }, [debouncedValue, currentSearch, setSearch]);
 
   const handleClear = () => {
     setValue("");
@@ -88,7 +79,7 @@ export function SearchInput() {
         value={value}
         onChange={(e) => setValue(e.target.value)}
         placeholder={t('search')}
-        className="w-full pl-9 pr-20 py-2.5 text-sm border border-border rounded-lg bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all"
+        className="w-full pl-9 pr-20 py-2.5 text-sm border border-border rounded-lg bg-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent transition-all shadow-sm focus:shadow-md"
       />
 
       {/* Clear button and keyboard hint */}

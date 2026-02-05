@@ -41,7 +41,6 @@ export async function runTestExtraction(): Promise<TestExtractionResult> {
       console.error("Error deleting existing test products:", deleteError);
     } else {
       deletedExisting = true;
-      console.log(`Deleted ${existingProducts.length} existing test product(s)`);
     }
   }
 

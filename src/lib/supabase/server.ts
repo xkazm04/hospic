@@ -1,22 +1,14 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { cache } from "react";
-import { checkCircuit, CircuitBreakerError } from "./circuit-breaker";
+import { checkCircuitOrThrow, CircuitBreakerError } from "./circuit-breaker";
 
 // Cache the client creation per request to avoid multiple auth calls
 // This prevents rate limiting when multiple queries run in parallel
 export const createClient = cache(async () => {
   // Check circuit breaker before creating client
   // This prevents infinite loops from overwhelming the database
-  try {
-    checkCircuit();
-  } catch (error) {
-    if (error instanceof CircuitBreakerError) {
-      console.error("[Supabase Server]", error.message);
-      throw error;
-    }
-    throw error;
-  }
+  checkCircuitOrThrow("Supabase Server");
 
   const cookieStore = await cookies();
 
@@ -43,5 +35,3 @@ export const createClient = cache(async () => {
     }
   );
 });
-
-export { CircuitBreakerError } from "./circuit-breaker";

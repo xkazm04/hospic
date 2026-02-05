@@ -1,11 +1,16 @@
 import { Suspense } from "react";
 import { getTranslations } from "next-intl/server";
-import { getProducts, getVendors, getEMDNCategories, getEMDNCategoriesFlat, getManufacturers } from "@/lib/queries";
+import { getProducts, getVendors, getEMDNCategories, getManufacturers } from "@/lib/queries";
+import { flattenCategories } from "@/lib/utils/format-category";
+
+// ISR: Revalidate page every 60 seconds for fresh data without blocking
+export const revalidate = 60;
 import { FilterSidebar, FilterSection } from "@/components/filters/filter-sidebar";
 import { SearchInput } from "@/components/filters/search-input";
 import { CategoryTree } from "@/components/filters/category-tree";
 import { VendorFilter } from "@/components/filters/vendor-filter";
 import { CatalogClient } from "@/components/catalog-client";
+import { CatalogSkeleton } from "@/components/catalog-skeleton";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { Package } from "lucide-react";
 
@@ -23,35 +28,6 @@ interface HomeProps {
   }>;
 }
 
-// Loading skeleton for the catalog
-function CatalogSkeleton() {
-  return (
-    <div className="space-y-4">
-      {/* Header skeleton */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <div className="h-6 w-24 bg-muted rounded animate-pulse" />
-          <div className="h-4 w-32 bg-muted rounded animate-pulse" />
-        </div>
-        <div className="h-10 w-32 bg-muted rounded animate-pulse" />
-      </div>
-
-      {/* Table skeleton */}
-      <div className="border border-border rounded-lg overflow-hidden">
-        <div className="h-12 bg-muted/50 border-b border-border" />
-        {Array.from({ length: 8 }).map((_, i) => (
-          <div key={i} className="h-14 border-b border-border last:border-b-0 flex items-center px-4 gap-4">
-            <div className="h-4 w-1/4 bg-muted rounded animate-pulse" />
-            <div className="h-4 w-1/6 bg-muted rounded animate-pulse" />
-            <div className="h-4 w-1/6 bg-muted rounded animate-pulse" />
-            <div className="h-4 w-1/6 bg-muted rounded animate-pulse" />
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 export default async function Home({ searchParams }: HomeProps) {
   const params = await searchParams;
   const t = await getTranslations();
@@ -59,8 +35,8 @@ export default async function Home({ searchParams }: HomeProps) {
   const page = parseInt(params.page || "1");
   const pageSize = 20;
 
-  // Fetch data in parallel
-  const [productsResult, allVendors, categories, emdnCategoriesFlat, manufacturers] = await Promise.all([
+  // Fetch data in parallel (removed redundant getEMDNCategoriesFlat - derive from tree instead)
+  const [productsResult, allVendors, categories, manufacturers] = await Promise.all([
     getProducts({
       page,
       pageSize,
@@ -75,9 +51,11 @@ export default async function Home({ searchParams }: HomeProps) {
     }),
     getVendors(),
     getEMDNCategories(),
-    getEMDNCategoriesFlat(),
     getManufacturers(),
   ]);
+
+  // Flatten category tree for components that need flat list (O(n) single pass)
+  const emdnCategoriesFlat = flattenCategories(categories);
 
   // Filter out test vendors
   const vendors = allVendors.filter(v =>
@@ -93,10 +71,10 @@ export default async function Home({ searchParams }: HomeProps) {
 
   return (
     <main className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="h-14 border-b border-border flex items-center justify-between px-6 sticky top-0 z-20 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      {/* Header - enhanced with subtle gradient and shadow */}
+      <header className="h-14 border-b border-border/60 flex items-center justify-between px-6 sticky top-0 z-20 bg-gradient-to-b from-background via-background/98 to-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-green-light border border-green-border flex items-center justify-center">
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-light to-green-light/60 border border-green-border/60 flex items-center justify-center shadow-sm">
             <Package className="h-4 w-4 text-accent" />
           </div>
           <div>

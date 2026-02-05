@@ -2,11 +2,11 @@
 
 @theme {
   /* Colors - Light theme optimized for elegant, professional look */
-  --color-background: #ffffff;
+  --color-background: #f5f5f5;
   --color-foreground: #0a0a0a;
-  --color-muted: #f5f5f5;
+  --color-muted: #e8e8e8;
   --color-muted-foreground: #6b7280;
-  --color-border: #e5e7eb;
+  --color-border: #bdc1c6;
   --color-accent: #166534;
   --color-accent-foreground: #ffffff;
 
@@ -18,18 +18,18 @@
   /* Green tones for subtle decorations */
   --color-green-subtle: #166534;
   --color-green-light: #f0fdf4;
-  --color-green-border: #bbf7d0;
+  --color-green-border: #86efac;
   --color-green-hover: #15803d;
 
   /* Blue tones for research section */
   --color-blue-subtle: #1e40af;
   --color-blue-light: #eff6ff;
-  --color-blue-border: #bfdbfe;
+  --color-blue-border: #93c5fd;
 
   /* Table specific - subtle differentiation */
-  --color-table-header: #fafafa;
-  --color-table-row-alt: #fafafa;
-  --color-table-row-hover: #f9fafb;
+  --color-table-header: #ececec;
+  --color-table-row-alt: #ececec;
+  --color-table-row-hover: #e5e5e5;
 
   /* Typography */
   --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
@@ -39,9 +39,16 @@
   --radius-md: 0.375rem;
   --radius-lg: 0.5rem;
 
-  /* Shadows */
+  /* Shadows - enhanced depth */
   --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
   --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+  --shadow-subtle: 0 1px 3px 0 rgb(0 0 0 / 0.03), 0 1px 2px 0 rgb(0 0 0 / 0.02);
+
+  /* Subtle patterns for backgrounds */
+  --pattern-grid: linear-gradient(rgba(22, 101, 52, 0.02) 1px, transparent 1px),
+                  linear-gradient(90deg, rgba(22, 101, 52, 0.02) 1px, transparent 1px);
+  --pattern-dots: radial-gradient(circle, rgba(22, 101, 52, 0.03) 1px, transparent 1px);
 }
 
 body {
@@ -50,6 +57,11 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Subtle grid pattern background */
+  background-image: var(--pattern-grid);
+  background-size: 24px 24px;
+  background-position: -1px -1px;
 }
 
 /* Scrollbar styling for elegant look */

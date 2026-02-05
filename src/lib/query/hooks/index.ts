@@ -1,5 +1,6 @@
 export {
   useCategories,
+  useCategoryLookups,
   useCategoryById,
   useCategoryAncestors,
   useInvalidateCategories,

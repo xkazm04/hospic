@@ -2,8 +2,10 @@
 
 import { useMemo, useCallback, memo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useLocale } from "next-intl";
 import { ChevronRight } from "lucide-react";
 import { toTitleCase, simplifyChildName } from "@/lib/utils/format-category";
+import { getLocalizedCategoryName } from "@/lib/utils/use-localized-category";
 import type { EMDNCategory } from "@/lib/types";
 
 interface ExpandableCategoryProps {
@@ -25,9 +27,10 @@ export const ExpandableCategory = memo(function ExpandableCategory({
 }: ExpandableCategoryProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const locale = useLocale();
   const currentFilter = searchParams.get("category");
 
-  // Build the full path of categories from root to current
+  // Build the full path of categories from root to current with localized names
   const categoryPath = useMemo((): CategoryLevel[] => {
     if (!category) return [];
 
@@ -38,10 +41,13 @@ export const ExpandableCategory = memo(function ExpandableCategory({
     let current: EMDNCategory | undefined = category;
 
     while (current) {
+      // Get localized name based on locale
+      const localizedName = getLocalizedCategoryName(current, locale);
+
       tempPath.unshift({
         id: current.id,
-        name: current.name,
-        displayName: toTitleCase(current.name),
+        name: localizedName,
+        displayName: toTitleCase(localizedName),
         code: current.code,
         depth: 0,
       });
@@ -65,7 +71,7 @@ export const ExpandableCategory = memo(function ExpandableCategory({
     }
 
     return tempPath;
-  }, [category, allCategories]);
+  }, [category, allCategories, locale]);
 
   const handleCategoryClick = useCallback(
     (categoryId: string, e: React.MouseEvent) => {
@@ -87,7 +93,7 @@ export const ExpandableCategory = memo(function ExpandableCategory({
   );
 
   if (!category || categoryPath.length === 0) {
-    return <span className="text-muted-foreground/40 text-sm">—</span>;
+    return <span className="text-muted-foreground/40 text-sm transition-colors">—</span>;
   }
 
   // Last level (most specific) for first row
@@ -102,8 +108,10 @@ export const ExpandableCategory = memo(function ExpandableCategory({
       <button
         onClick={(e) => handleCategoryClick(lastLevel.id, e)}
         className={`
-          text-sm font-medium transition-colors text-left truncate block max-w-full
-          ${isLastFiltered ? "text-accent" : "text-foreground hover:text-accent"}
+          text-sm font-medium transition-all duration-150 text-left truncate block max-w-full
+          rounded px-1 -mx-1 py-0.5 -my-0.5
+          focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1
+          ${isLastFiltered ? "text-accent" : "text-foreground hover:text-accent hover:bg-accent/5 active:scale-[0.98]"}
         `}
         title={lastLevel.displayName}
       >
@@ -119,13 +127,14 @@ export const ExpandableCategory = memo(function ExpandableCategory({
             return (
               <span key={level.id} className="flex items-center min-w-0">
                 {index > 0 && (
-                  <ChevronRight className="h-3 w-3 mx-0.5 text-muted-foreground/40 shrink-0" />
+                  <ChevronRight className="h-3 w-3 mx-0.5 text-muted-foreground/40 shrink-0 transition-opacity" />
                 )}
                 <button
                   onClick={(e) => handleCategoryClick(level.id, e)}
                   className={`
-                    truncate transition-colors text-left
-                    ${isFiltered ? "text-accent font-medium" : "hover:text-accent"}
+                    truncate transition-all duration-150 text-left rounded px-1 -mx-1 py-0.5 -my-0.5
+                    focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1
+                    ${isFiltered ? "text-accent font-medium" : "hover:text-accent hover:bg-accent/5 active:scale-[0.98]"}
                   `}
                   title={level.displayName}
                 >

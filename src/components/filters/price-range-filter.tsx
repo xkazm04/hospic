@@ -61,7 +61,7 @@ export function PriceRangeFilter() {
           <label htmlFor="min-price" className="sr-only">{t("min")}</label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-              Kč
+              {t("currencySymbol")}
             </span>
             <input
               id="min-price"
@@ -81,7 +81,7 @@ export function PriceRangeFilter() {
           <label htmlFor="max-price" className="sr-only">{t("max")}</label>
           <div className="relative">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-              Kč
+              {t("currencySymbol")}
             </span>
             <input
               id="max-price"

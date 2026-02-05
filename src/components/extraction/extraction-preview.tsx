@@ -11,6 +11,8 @@ import { createProduct } from '@/lib/actions/products'
 import { createVendor } from '@/lib/actions/vendors'
 import { findSimilarProducts, type SimilarProduct } from '@/lib/actions/similarity'
 import { SimilarProductsWarning } from './similar-products-warning'
+import { toTitleCase } from '@/lib/utils/format-category'
+import { useToast } from '@/components/ui/toast'
 import type { ExtractedProduct } from '@/lib/schemas/extraction'
 
 // Define input type for the form (before Zod transforms)
@@ -59,6 +61,7 @@ export function ExtractionPreview({
   const tp = useTranslations('product')
   const tr = useTranslations('regulatory')
   const tc = useTranslations('common')
+  const { showToast } = useToast()
   const [isPending, startTransition] = useTransition()
   const [serverError, setServerError] = useState<string | null>(null)
   const [similarProducts, setSimilarProducts] = useState<SimilarProduct[]>([])
@@ -146,6 +149,7 @@ export function ExtractionPreview({
       const result = await createProduct(formData)
 
       if (result.success) {
+        showToast(t('productSaved'), 'success')
         onSuccess()
       } else if (result.error) {
         const errorMessage =
@@ -272,13 +276,13 @@ export function ExtractionPreview({
                 className={inputClass}
               >
                 <option value="">{tp('selectVendor')}</option>
-                {/* Show extracted vendor as "Add new" option if not matched */}
+                {/* Show extracted vendor as new option if not matched */}
                 {extractedData.vendor_name && !matchedVendor && (
                   <option
                     value={`${NEW_VENDOR_PREFIX}${extractedData.vendor_name}`}
                     className="font-medium"
                   >
-                    + {t('addNewVendor', { name: extractedData.vendor_name })}
+                    {extractedData.vendor_name}
                   </option>
                 )}
                 {vendors.map((vendor) => (
@@ -321,7 +325,7 @@ export function ExtractionPreview({
                 <option value="">{tp('selectCategory')}</option>
                 {emdnCategories.map((category) => (
                   <option key={category.id} value={category.id}>
-                    {category.code} - {category.name}
+                    {category.code} - {toTitleCase(category.name)}
                   </option>
                 ))}
               </select>
@@ -334,7 +338,7 @@ export function ExtractionPreview({
               {/* Show matched category name for confirmation */}
               {matchedEmdn && (
                 <p className="text-xs text-green-600 mt-1">
-                  {matchedEmdn.name}
+                  {toTitleCase(matchedEmdn.name)}
                 </p>
               )}
             </div>

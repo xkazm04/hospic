@@ -1,10 +1,12 @@
 "use client";
 
-import { useState, useCallback, useMemo, memo } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useCallback, useMemo, memo } from "react";
+import { useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { motion, AnimatePresence } from "motion/react";
-import { ChevronDown, Check, X } from "lucide-react";
+import { Check } from "lucide-react";
+import { useUrlFilterMulti } from "@/lib/hooks/use-url-filter";
+import { DropdownFilter } from "@/components/filters/dropdown-filter";
+import { MDR_CLASS_STYLES } from "@/lib/constants/regulatory";
 
 interface RegulatoryFilterProps {
   className?: string;
@@ -15,9 +17,19 @@ export const RegulatoryFilter = memo(function RegulatoryFilter({
 }: RegulatoryFilterProps) {
   const t = useTranslations('regulatory');
   const tc = useTranslations('common');
-  const [isOpen, setIsOpen] = useState(false);
-  const router = useRouter();
   const searchParams = useSearchParams();
+
+  const {
+    values: selectedCeMarked,
+    toggleValue: toggleCe,
+    clearValues: clearCe,
+  } = useUrlFilterMulti("ceMarked");
+
+  const {
+    values: selectedMdrClasses,
+    toggleValue: toggleMdr,
+    clearValues: clearMdr,
+  } = useUrlFilterMulti("mdrClass");
 
   // CE options sorted by label name
   const CE_OPTIONS = useMemo(() => [
@@ -27,122 +39,49 @@ export const RegulatoryFilter = memo(function RegulatoryFilter({
 
   // MDR options sorted by class name (I, IIa, IIb, III)
   const MDR_OPTIONS = useMemo(() => [
-    { value: "I", label: t("mdrClassI"), color: "bg-green-100 text-green-700" },
-    { value: "IIa", label: t("mdrClassIIa"), color: "bg-yellow-100 text-yellow-700" },
-    { value: "IIb", label: t("mdrClassIIb"), color: "bg-orange-100 text-orange-700" },
-    { value: "III", label: t("mdrClassIII"), color: "bg-red-100 text-red-700" },
+    { value: "I", label: t("mdrClassI"), color: MDR_CLASS_STYLES.I.filter },
+    { value: "IIa", label: t("mdrClassIIa"), color: MDR_CLASS_STYLES.IIa.filter },
+    { value: "IIb", label: t("mdrClassIIb"), color: MDR_CLASS_STYLES.IIb.filter },
+    { value: "III", label: t("mdrClassIII"), color: MDR_CLASS_STYLES.III.filter },
   ], [t]);
-
-  // Parse selected CE values (multiselect)
-  const selectedCeMarked = useMemo(() => {
-    const param = searchParams.get("ceMarked");
-    if (!param) return [];
-    return param.split(",").filter(Boolean);
-  }, [searchParams]);
-
-  // Parse selected MDR classes (multiselect)
-  const selectedMdrClasses = useMemo(() => {
-    const param = searchParams.get("mdrClass");
-    if (!param) return [];
-    return param.split(",").filter(Boolean);
-  }, [searchParams]);
 
   const hasFilters = selectedCeMarked.length > 0 || selectedMdrClasses.length > 0;
   const totalSelected = selectedCeMarked.length + selectedMdrClasses.length;
 
-  const updateFilter = useCallback(
-    (key: string, values: string[]) => {
-      const params = new URLSearchParams(searchParams.toString());
-      if (values.length > 0) {
-        params.set(key, values.join(","));
-      } else {
-        params.delete(key);
-      }
-      params.set("page", "1");
-      router.push(`?${params.toString()}`);
-    },
-    [router, searchParams]
-  );
-
   const clearFilters = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
-      const params = new URLSearchParams(searchParams.toString());
-      params.delete("ceMarked");
-      params.delete("mdrClass");
-      params.set("page", "1");
-      router.push(`?${params.toString()}`);
+      clearCe();
+      clearMdr();
     },
-    [router, searchParams]
+    [clearCe, clearMdr]
   );
 
   const toggleCeMarked = useCallback(
     (value: string) => {
       const isSelected = selectedCeMarked.includes(value);
-      if (isSelected) {
-        updateFilter("ceMarked", selectedCeMarked.filter((v) => v !== value));
-      } else {
-        updateFilter("ceMarked", [...selectedCeMarked, value]);
-      }
+      toggleCe(value, !isSelected);
     },
-    [selectedCeMarked, updateFilter]
+    [selectedCeMarked, toggleCe]
   );
 
   const toggleMdrClass = useCallback(
     (value: string) => {
       const isSelected = selectedMdrClasses.includes(value);
-      if (isSelected) {
-        updateFilter("mdrClass", selectedMdrClasses.filter((v) => v !== value));
-      } else {
-        updateFilter("mdrClass", [...selectedMdrClasses, value]);
-      }
+      toggleMdr(value, !isSelected);
     },
-    [selectedMdrClasses, updateFilter]
+    [selectedMdrClasses, toggleMdr]
   );
 
   return (
-    <div className={`relative ${className}`}>
-      <div className="flex items-center gap-1">
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className={`
-            flex items-center gap-1 font-medium text-xs uppercase tracking-wide transition-colors
-            ${hasFilters ? "text-accent" : "text-muted-foreground hover:text-foreground"}
-          `}
-        >
-          <span>{t('filterTitle')}</span>
-          <ChevronDown
-            className={`h-3 w-3 transition-transform ${isOpen ? "rotate-180" : ""}`}
-          />
-        </button>
-        {hasFilters && (
-          <button
-            onClick={clearFilters}
-            className="p-0.5 rounded hover:bg-muted transition-colors"
-            title={t('clearFilters')}
-          >
-            <X className="h-3 w-3" />
-          </button>
-        )}
-      </div>
-
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            {/* Backdrop */}
-            <div
-              className="fixed inset-0 z-40"
-              onClick={() => setIsOpen(false)}
-            />
-
-            {/* Dropdown */}
-            <motion.div
-              initial={{ opacity: 0, y: -8, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -8, scale: 0.95 }}
-              transition={{ duration: 0.15 }}
-              className="absolute left-0 top-full mt-1 z-50 bg-background border border-border rounded-lg shadow-lg py-1 min-w-[180px]"
-            >
+    <DropdownFilter
+      label={t('filterTitle')}
+      hasFilters={hasFilters}
+      onClear={clearFilters}
+      clearTitle={t('clearFilters')}
+      className={className}
+      minWidth="180px"
+    >
               {/* Selection summary */}
               {totalSelected > 0 && (
                 <div className="px-3 py-1.5 text-xs text-muted-foreground border-b border-border flex items-center justify-between">
@@ -214,10 +153,6 @@ export const RegulatoryFilter = memo(function RegulatoryFilter({
                   </button>
                 );
               })}
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </div>
+    </DropdownFilter>
   );
 });

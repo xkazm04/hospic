@@ -98,3 +98,22 @@ export function formatCategoryPath(path: string): string[] {
   if (!path) return [];
   return path.split('/').filter(Boolean);
 }
+
+/**
+ * Flatten a hierarchical category tree into a flat list.
+ * Performs a depth-first traversal in O(n) time.
+ *
+ * @param nodes - The root nodes of the category tree
+ * @returns A flat array containing all categories
+ */
+export function flattenCategories<T extends { children?: T[] }>(nodes: T[]): T[] {
+  const result: T[] = [];
+  function traverse(items: T[]) {
+    for (const item of items) {
+      result.push(item);
+      if (item.children?.length) traverse(item.children);
+    }
+  }
+  traverse(nodes);
+  return result;
+}

@@ -10,9 +10,9 @@ import {
   Row,
 } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { useState, useCallback, useRef, useMemo } from "react";
+import { useState, useCallback, useRef, useMemo, useTransition } from "react";
 import { useTranslations } from "next-intl";
-import { motion } from "motion/react";
+// Removed motion for performance - row animations caused jank with virtual scrolling
 import { PackageX } from "lucide-react";
 import { TablePagination } from "./table-pagination";
 import {
@@ -34,7 +34,6 @@ interface DataTableProps<TData> {
 
 // Row height for virtual scrolling calculations
 const ROW_HEIGHT = 52;
-const EXPANDED_ROW_EXTRA_HEIGHT = 100; // Approximate extra height when category is expanded
 
 export function DataTable<TData>({
   columns,
@@ -50,6 +49,7 @@ export function DataTable<TData>({
   const router = useRouter();
   const searchParams = useSearchParams();
   const tableContainerRef = useRef<HTMLDivElement>(null);
+  const [isPending, startTransition] = useTransition();
 
   // Derive sorting state from URL
   const sortBy = searchParams.get("sortBy") || "name";
@@ -68,9 +68,12 @@ export function DataTable<TData>({
           params.set(key, value);
         }
       });
-      router.push(`?${params.toString()}`);
+      // Use startTransition to keep UI responsive during navigation
+      startTransition(() => {
+        router.push(`?${params.toString()}`);
+      });
     },
-    [router, searchParams]
+    [router, searchParams, startTransition]
   );
 
   const table = useReactTable({
@@ -107,7 +110,7 @@ export function DataTable<TData>({
     count: rows.length,
     getScrollElement: () => tableContainerRef.current,
     estimateSize: () => ROW_HEIGHT,
-    overscan: 5, // Render 5 extra rows above/below viewport
+    overscan: 12, // Render 12 extra rows above/below viewport for smoother scrolling
   });
 
   const virtualRows = virtualizer.getVirtualItems();
@@ -140,12 +143,7 @@ export function DataTable<TData>({
           />
         </div>
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.2 }}
-          className="flex flex-col items-center justify-center py-20 text-center bg-background border border-border rounded-lg"
-        >
+        <div className="flex flex-col items-center justify-center py-20 text-center bg-background border border-border rounded-lg">
           <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
             <PackageX className="h-8 w-8 text-muted-foreground" />
           </div>
@@ -155,7 +153,7 @@ export function DataTable<TData>({
           <p className="text-sm text-muted-foreground max-w-sm">
             {t("adjustFilters")}
           </p>
-        </motion.div>
+        </div>
       </div>
     );
   }
@@ -174,7 +172,7 @@ export function DataTable<TData>({
       </div>
 
       {/* Table container */}
-      <div className="flex flex-col bg-background border border-border rounded-lg shadow-sm overflow-hidden ring-1 ring-green-border/30">
+      <div className="flex flex-col bg-background border border-border/60 rounded-lg shadow-md overflow-hidden ring-1 ring-green-border/20">
         {/* Scrollable table area with virtual scrolling */}
         <div
           ref={tableContainerRef}
@@ -182,7 +180,7 @@ export function DataTable<TData>({
           style={{ maxHeight: "calc(100vh - 320px)", minHeight: "400px" }}
         >
           <table className="w-full table-fixed">
-            <thead className="sticky top-0 z-10 bg-green-light/50 border-b-2 border-green-border">
+            <thead className="sticky top-0 z-10 bg-table-header border-b-2 border-green-border shadow-md backdrop-blur-none">
               {table.getHeaderGroups().map((headerGroup) => (
                 <tr key={headerGroup.id}>
                   {headerGroup.headers.map((header) => {
@@ -215,22 +213,15 @@ export function DataTable<TData>({
                 </tr>
               )}
 
-              {/* Virtualized rows */}
+              {/* Virtualized rows - no animation for performance */}
               {virtualRows.map((virtualRow) => {
                 const row = rows[virtualRow.index] as Row<TData>;
-                const isFirstVisible = virtualRow.index < 10;
 
                 return (
-                  <motion.tr
+                  <tr
                     key={row.id}
                     data-index={virtualRow.index}
-                    initial={isFirstVisible ? { opacity: 0 } : false}
-                    animate={{ opacity: 1 }}
-                    transition={{
-                      duration: 0.15,
-                      delay: isFirstVisible ? virtualRow.index * 0.02 : 0,
-                    }}
-                    className="group transition-colors hover:bg-muted/30"
+                    className="group transition-colors duration-150 hover:bg-green-light/20"
                   >
                     {row.getVisibleCells().map((cell) => (
                       <td
@@ -240,7 +231,7 @@ export function DataTable<TData>({
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </td>
                     ))}
-                  </motion.tr>
+                  </tr>
                 );
               })}
 

@@ -21,6 +21,35 @@ async function fetchCategories(): Promise<CategoryNode[]> {
 }
 
 /**
+ * Build lookup maps for O(1) category access
+ * Called once when categories change, provides fast lookups
+ */
+interface CategoryLookups {
+  byId: Map<string, CategoryNode>
+  ancestorsById: Map<string, string[]>
+}
+
+function buildCategoryLookups(categories: CategoryNode[]): CategoryLookups {
+  const byId = new Map<string, CategoryNode>()
+  const ancestorsById = new Map<string, string[]>()
+
+  // Recursive function to traverse tree and build maps
+  function traverse(nodes: CategoryNode[], ancestors: string[]) {
+    for (const node of nodes) {
+      byId.set(node.id, node)
+      ancestorsById.set(node.id, [...ancestors])
+
+      if (node.children && node.children.length > 0) {
+        traverse(node.children, [...ancestors, node.id])
+      }
+    }
+  }
+
+  traverse(categories, [])
+  return { byId, ancestorsById }
+}
+
+/**
  * Invalidate server-side category cache
  */
 async function revalidateCategories(): Promise<void> {
@@ -57,57 +86,42 @@ export function useCategories(initialData?: CategoryNode[]) {
 }
 
 /**
- * Hook: Get a specific category by ID from the cached tree
+ * Hook: Get memoized category lookups for O(1) access
+ * Builds lookup maps once when categories change
  */
-export function useCategoryById(categoryId: string | null) {
+export function useCategoryLookups() {
   const { data: categories } = useCategories()
 
-  if (!categoryId || !categories) return null
-
-  function findCategory(nodes: CategoryNode[]): CategoryNode | null {
-    for (const node of nodes) {
-      if (node.id === categoryId) return node
-      if (node.children.length > 0) {
-        const found = findCategory(node.children)
-        if (found) return found
-      }
+  return useMemo(() => {
+    if (!categories || categories.length === 0) {
+      return { byId: new Map(), ancestorsById: new Map() }
     }
-    return null
-  }
+    return buildCategoryLookups(categories)
+  }, [categories])
+}
 
-  return findCategory(categories)
+/**
+ * Hook: Get a specific category by ID from the cached tree
+ * Uses O(1) lookup instead of tree traversal
+ */
+export function useCategoryById(categoryId: string | null) {
+  const { byId } = useCategoryLookups()
+
+  if (!categoryId) return null
+  return byId.get(categoryId) || null
 }
 
 /**
  * Hook: Get ancestor IDs for a category (for auto-expanding tree)
- * Returns a memoized array that only changes when categoryId or categories change.
+ * Uses O(1) lookup instead of tree traversal
  */
 export function useCategoryAncestors(categoryId: string | null): string[] {
-  const { data: categories } = useCategories()
+  const { ancestorsById } = useCategoryLookups()
 
   return useMemo(() => {
-    if (!categoryId || !categories || categories.length === 0) return []
-
-    const ancestors: string[] = []
-
-    function findAncestors(nodes: CategoryNode[], path: string[]): boolean {
-      for (const node of nodes) {
-        if (node.id === categoryId) {
-          ancestors.push(...path)
-          return true
-        }
-        if (node.children && node.children.length > 0) {
-          if (findAncestors(node.children, [...path, node.id])) {
-            return true
-          }
-        }
-      }
-      return false
-    }
-
-    findAncestors(categories, [])
-    return ancestors
-  }, [categoryId, categories])
+    if (!categoryId) return []
+    return ancestorsById.get(categoryId) || []
+  }, [categoryId, ancestorsById])
 }
 
 /**

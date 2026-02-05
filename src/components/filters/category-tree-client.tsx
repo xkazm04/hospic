@@ -56,9 +56,10 @@ function CategoryItem({
         className={`
           group flex items-center gap-1 py-1.5 px-2 rounded-md cursor-pointer
           transition-all duration-150
+          focus-within:ring-2 focus-within:ring-accent focus-within:ring-offset-1
           ${isSelected
-            ? 'bg-accent text-accent-foreground'
-            : 'hover:bg-muted text-foreground'
+            ? 'bg-accent text-accent-foreground shadow-sm hover:shadow-md'
+            : 'hover:bg-muted text-foreground hover:shadow-sm active:scale-[0.99]'
           }
         `}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
@@ -69,8 +70,9 @@ function CategoryItem({
           <button
             onClick={handleExpandClick}
             className={`
-              p-0.5 rounded transition-colors
-              ${isSelected ? 'hover:bg-accent-foreground/20' : 'hover:bg-muted-foreground/20'}
+              p-0.5 rounded transition-all duration-150
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1
+              ${isSelected ? 'hover:bg-accent-foreground/20 active:scale-90' : 'hover:bg-muted-foreground/20 active:scale-90'}
             `}
           >
             <motion.div
@@ -92,14 +94,14 @@ function CategoryItem({
         {/* Product count */}
         {category.productCount > 0 && (
           <span
-            className={`text-xs shrink-0 ${isSelected ? 'text-accent-foreground/80' : 'text-muted-foreground'}`}
+            className={`text-xs shrink-0 font-medium transition-colors ${isSelected ? 'text-accent-foreground/80' : 'text-muted-foreground'}`}
           >
             {category.productCount}
           </span>
         )}
 
         {/* Selection indicator */}
-        {isSelected && <Check className="h-3.5 w-3.5 shrink-0" />}
+        {isSelected && <Check className="h-3.5 w-3.5 shrink-0 animate-in zoom-in-50 duration-200" />}
       </div>
 
       {/* Children */}
@@ -216,7 +218,7 @@ export function CategoryTreeClient() {
   // Loading state
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-8">
+      <div className="flex items-center justify-center py-8 animate-in fade-in duration-300">
         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         <span className="ml-2 text-sm text-muted-foreground">{t('loadingCategories')}</span>
       </div>
@@ -226,10 +228,10 @@ export function CategoryTreeClient() {
   // Error state
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-6 text-center px-4">
-        <FolderTree className="h-8 w-8 text-destructive/40 mb-2" />
-        <p className="text-sm text-destructive">{t('failedCategories')}</p>
-        <p className="text-xs text-muted-foreground mt-1">
+      <div className="flex flex-col items-center justify-center py-6 text-center px-4 animate-in fade-in duration-300">
+        <FolderTree className="h-8 w-8 text-destructive/40 mb-2 transition-colors" />
+        <p className="text-sm text-destructive font-medium">{t('failedCategories')}</p>
+        <p className="text-xs text-muted-foreground mt-1 transition-colors">
           {error instanceof Error ? error.message : 'Unknown error'}
         </p>
       </div>
@@ -239,10 +241,10 @@ export function CategoryTreeClient() {
   // Empty state
   if (!categories || categories.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-6 text-center px-4">
-        <FolderTree className="h-8 w-8 text-muted-foreground/40 mb-2" />
-        <p className="text-sm text-muted-foreground">{t('noCategorized')}</p>
-        <p className="text-xs text-muted-foreground/70 mt-1">
+      <div className="flex flex-col items-center justify-center py-6 text-center px-4 animate-in fade-in duration-300">
+        <FolderTree className="h-8 w-8 text-muted-foreground/40 mb-2 transition-opacity" />
+        <p className="text-sm text-muted-foreground font-medium">{t('noCategorized')}</p>
+        <p className="text-xs text-muted-foreground/70 mt-1 transition-colors">
           {t('noCategorizedDesc')}
         </p>
       </div>
@@ -255,14 +257,14 @@ export function CategoryTreeClient() {
       <div className="flex justify-end px-1">
         <button
           onClick={toggleAllExpanded}
-          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          className="text-xs font-medium text-muted-foreground hover:text-foreground transition-all duration-150 px-2 py-1 rounded-md hover:bg-muted/50 hover:shadow-sm active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1"
         >
           {isAllExpanded ? t('collapseAll') : t('expandAll')}
         </button>
       </div>
 
       {/* Category tree */}
-      <div className="space-y-0.5 max-h-[400px] overflow-y-auto scrollbar-thin">
+      <div className="space-y-0.5 max-h-[400px] overflow-y-auto scrollbar-thin animate-in fade-in slide-in-from-top-2 duration-300">
         {categories.map((category) => (
           <CategoryItem
             key={category.id}

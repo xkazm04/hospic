@@ -1,12 +1,14 @@
 "use client";
 
+import { useMemo, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { X, FolderTree, Building2, Search, Shield, Factory } from "lucide-react";
 import { toTitleCase } from "@/lib/utils/format-category";
 import type { Vendor, EMDNCategory } from "@/lib/types";
 import type { CategoryNode } from "@/lib/queries";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
+import { getLocalizedCategoryName } from "@/lib/utils/use-localized-category";
 
 interface ActiveFiltersProps {
   vendors: Vendor[];
@@ -54,10 +56,10 @@ function FilterChip({ label, value, icon, onRemove, variant = "default" }: Filte
       exit={{ opacity: 0, scale: 0.9 }}
       transition={{ duration: 0.15 }}
       className={`
-        inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm
+        inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm shadow-sm
         ${variant === "category"
           ? "bg-green-light text-accent border border-green-border"
-          : "bg-background text-foreground border border-border hover:border-green-border/50 transition-colors"
+          : "bg-background text-foreground border border-border hover:border-green-border/50 transition-colors duration-150"
         }
       `}
     >
@@ -77,22 +79,41 @@ function FilterChip({ label, value, icon, onRemove, variant = "default" }: Filte
 
 export function ActiveFilters({ vendors, categories }: ActiveFiltersProps) {
   const t = useTranslations("activeFilters");
+  const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
-  // Extract active filters
-  const search = searchParams.get("search");
-  const vendorIds = searchParams.get("vendor")?.split(",").filter(Boolean) || [];
-  const categoryId = searchParams.get("category");
-  const ceMarkedValues = searchParams.get("ceMarked")?.split(",").filter(Boolean) || [];
-  const mdrClassValues = searchParams.get("mdrClass")?.split(",").filter(Boolean) || [];
-  const manufacturerValues = searchParams.get("manufacturer")?.split(",").filter(Boolean).map(decodeURIComponent) || [];
+  // Memoize filter extraction to avoid recalculating on every render
+  const {
+    search,
+    vendorIds,
+    categoryId,
+    ceMarkedValues,
+    mdrClassValues,
+    manufacturerValues,
+  } = useMemo(() => ({
+    search: searchParams.get("search"),
+    vendorIds: searchParams.get("vendor")?.split(",").filter(Boolean) || [],
+    categoryId: searchParams.get("category"),
+    ceMarkedValues: searchParams.get("ceMarked")?.split(",").filter(Boolean) || [],
+    mdrClassValues: searchParams.get("mdrClass")?.split(",").filter(Boolean) || [],
+    manufacturerValues: searchParams.get("manufacturer")?.split(",").filter(Boolean).map(decodeURIComponent) || [],
+  }), [searchParams]);
 
-  // Map IDs to names
-  const selectedVendors = vendorIds
-    .map((id) => vendors.find((v) => v.id === id))
-    .filter(Boolean) as Vendor[];
-  const categoryPath = categoryId ? getCategoryPath(categories, categoryId) : [];
+  // Memoize vendor lookup
+  const selectedVendors = useMemo(() =>
+    vendorIds
+      .map((id) => vendors.find((v) => v.id === id))
+      .filter(Boolean) as Vendor[],
+    [vendorIds, vendors]
+  );
+
+  // Memoize category path calculation (expensive tree traversal)
+  const categoryPath = useMemo(() =>
+    categoryId ? getCategoryPath(categories, categoryId) : [],
+    [categoryId, categories]
+  );
 
   const hasFilters = search || vendorIds.length > 0 || categoryId || ceMarkedValues.length > 0 || mdrClassValues.length > 0 || manufacturerValues.length > 0;
 
@@ -136,7 +157,10 @@ export function ActiveFilters({ vendors, categories }: ActiveFiltersProps) {
     }
 
     params.set("page", "1");
-    router.push(`?${params.toString()}`);
+    // Use startTransition to keep UI responsive
+    startTransition(() => {
+      router.push(`?${params.toString()}`);
+    });
   };
 
   const clearAll = () => {
@@ -147,14 +171,16 @@ export function ActiveFilters({ vendors, categories }: ActiveFiltersProps) {
     if (searchParams.has("sortOrder")) {
       params.set("sortOrder", searchParams.get("sortOrder")!);
     }
-    router.push(`?${params.toString()}`);
+    startTransition(() => {
+      router.push(`?${params.toString()}`);
+    });
   };
 
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="mb-4 p-3 bg-green-light/30 border border-green-border/50 rounded-lg"
+      className="mb-4 p-3 bg-green-light/30 border border-green-border/50 rounded-lg shadow-sm"
     >
       {/* Category breadcrumb - prominent display */}
       {categoryPath.length > 0 && (
@@ -163,27 +189,31 @@ export function ActiveFilters({ vendors, categories }: ActiveFiltersProps) {
             <FolderTree className="h-4 w-4 text-accent shrink-0" />
             <span className="text-muted-foreground">{t("category")}</span>
             <div className="flex items-center gap-1 flex-wrap">
-              {categoryPath.map((cat, index) => (
-                <span key={cat.id} className="flex items-center">
-                  {index > 0 && <span className="mx-1 text-muted-foreground">/</span>}
-                  <span
-                    className={
-                      index === categoryPath.length - 1
-                        ? "font-medium text-accent"
-                        : "text-muted-foreground"
-                    }
-                  >
-                    {toTitleCase(cat.name)}
+              {categoryPath.map((cat, index) => {
+                // Use localized category name based on current locale
+                const localizedName = getLocalizedCategoryName(cat, locale);
+                return (
+                  <span key={cat.id} className="flex items-center">
+                    {index > 0 && <span className="mx-1 text-muted-foreground">/</span>}
+                    <span
+                      className={
+                        index === categoryPath.length - 1
+                          ? "font-medium text-accent"
+                          : "text-muted-foreground"
+                      }
+                    >
+                      {toTitleCase(localizedName)}
+                    </span>
                   </span>
-                </span>
-              ))}
+                );
+              })}
             </div>
             <button
               onClick={() => removeFilter("category")}
-              className="ml-auto p-1 rounded hover:bg-muted transition-colors"
+              className="ml-auto p-1 rounded hover:bg-muted/80 transition-colors duration-150"
               aria-label={t("removeCategory")}
             >
-              <X className="h-4 w-4 text-muted-foreground" />
+              <X className="h-4 w-4 text-muted-foreground hover:text-foreground transition-colors" />
             </button>
           </div>
         </div>
@@ -252,7 +282,7 @@ export function ActiveFilters({ vendors, categories }: ActiveFiltersProps) {
         {(search || selectedVendors.length > 0 || ceMarkedValues.length > 0 || mdrClassValues.length > 0 || manufacturerValues.length > 0) && (
           <button
             onClick={clearAll}
-            className="ml-auto text-xs text-muted-foreground hover:text-foreground transition-colors"
+            className="ml-auto text-xs font-medium text-muted-foreground hover:text-foreground transition-colors duration-150 px-2 py-1 rounded hover:bg-muted/50"
           >
             {t("clearAll")}
           </button>

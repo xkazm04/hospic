@@ -11,6 +11,7 @@ import { RegulatoryFilter } from "./regulatory-filter";
 import { ManufacturerFilter } from "./manufacturer-filter";
 import type { ProductWithRelations, EMDNCategory } from "@/lib/types";
 import type { ColumnVisibility } from "./column-visibility-toggle";
+import { getPriceFormatter } from "@/lib/utils/format-price";
 
 interface ColumnLabels {
   product: string;
@@ -77,12 +78,9 @@ const PriceCell = memo(function PriceCell({ price }: { price: number | null }) {
   if (price === null || price === undefined) {
     return <span className="text-sm text-muted-foreground/40 text-right block">—</span>;
   }
-  const formatted = new Intl.NumberFormat(locale === "cs" ? "cs-CZ" : "en-US", {
-    style: "currency",
-    currency: "CZK",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(price);
+  // Use memoized formatter for performance (avoids creating Intl object on every render)
+  const formatter = getPriceFormatter(locale);
+  const formatted = formatter.format(price);
   return (
     <span className="text-sm font-medium tabular-nums text-right block text-foreground">
       {formatted}

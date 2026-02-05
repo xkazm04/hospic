@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Settings2, Check } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export interface ColumnVisibility {
   product: boolean;
@@ -22,16 +23,6 @@ const DEFAULT_VISIBILITY: ColumnVisibility = {
   price: false,
   regulatory: false,
   category: true,
-};
-
-const COLUMN_LABELS: Record<keyof ColumnVisibility, string> = {
-  product: "Product",
-  sku: "SKU (under product)",
-  vendor: "Vendor (under product)",
-  manufacturer: "Manufacturer",
-  price: "Price",
-  regulatory: "Regulatory",
-  category: "Category",
 };
 
 const STORAGE_KEY = "medcatalog-column-visibility";
@@ -75,6 +66,8 @@ export function ColumnVisibilityToggle({
   onChange,
 }: ColumnVisibilityToggleProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const t = useTranslations("table");
+  const tCol = useTranslations("columnVisibility");
 
   const toggleColumn = (column: keyof ColumnVisibility) => {
     // Don't allow hiding product column
@@ -94,10 +87,10 @@ export function ColumnVisibilityToggle({
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs text-muted-foreground hover:text-foreground border border-border rounded-md hover:bg-muted transition-colors"
-        title="Toggle column visibility"
+        title={t("toggleColumnVisibility")}
       >
         <Settings2 className="h-3.5 w-3.5" />
-        <span>Columns</span>
+        <span>{t("columns")}</span>
         <span className="text-[10px] bg-muted px-1 rounded">
           {visibleCount}/{Object.keys(visibility).length}
         </span>
@@ -121,9 +114,9 @@ export function ColumnVisibilityToggle({
               className="absolute right-0 top-full mt-1 z-50 bg-background border border-border rounded-lg shadow-lg py-1 min-w-[160px]"
             >
               <div className="px-3 py-1.5 text-xs font-medium text-muted-foreground border-b border-border mb-1">
-                Toggle columns
+                {t("toggleColumns")}
               </div>
-              {(Object.keys(COLUMN_LABELS) as Array<keyof ColumnVisibility>).map(
+              {(Object.keys(visibility) as Array<keyof ColumnVisibility>).map(
                 (column) => {
                   const isVisible = visibility[column];
                   const isRequired = column === "product";
@@ -152,7 +145,7 @@ export function ColumnVisibilityToggle({
                       >
                         {isVisible && <Check className="h-3 w-3 text-accent-foreground" />}
                       </div>
-                      <span>{COLUMN_LABELS[column]}</span>
+                      <span>{tCol(column)}</span>
                     </button>
                   );
                 }

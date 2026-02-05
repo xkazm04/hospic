@@ -31,8 +31,6 @@ interface ImportWizardProps {
   vendors: Vendor[];
 }
 
-const STEP_KEYS: ImportStep[] = ['vendor', 'upload', 'mapping', 'validation', 'importing', 'summary'];
-
 const STEP_ORDER: ImportStep[] = ['vendor', 'upload', 'mapping', 'validation', 'importing', 'summary'];
 
 /**

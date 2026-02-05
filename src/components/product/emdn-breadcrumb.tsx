@@ -14,7 +14,7 @@ export function EMDNBreadcrumb({ path, categoryName, compact = false }: EMDNBrea
   const t = useTranslations('emdn')
 
   if (!path) {
-    return <span className="text-muted-foreground italic">{t('notClassified')}</span>
+    return <span className="text-muted-foreground italic transition-colors">{t('notClassified')}</span>
   }
 
   // Parse path into segments
@@ -27,10 +27,10 @@ export function EMDNBreadcrumb({ path, categoryName, compact = false }: EMDNBrea
     // Compact view: show only code and name
     return (
       <div className="flex items-center gap-1.5 text-sm">
-        <code className="text-xs font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+        <code className="text-xs font-mono text-muted-foreground bg-muted/80 px-1.5 py-0.5 rounded transition-all hover:bg-muted">
           {segments[segments.length - 1]}
         </code>
-        <span className="text-foreground truncate">{formattedName}</span>
+        <span className="text-foreground truncate transition-colors">{formattedName}</span>
       </div>
     )
   }
@@ -42,13 +42,13 @@ export function EMDNBreadcrumb({ path, categoryName, compact = false }: EMDNBrea
         {segments.map((segment, index) => (
           <span key={segment} className="flex items-center">
             {index > 0 && (
-              <ChevronRight className="h-3 w-3 mx-0.5 text-muted-foreground/50" />
+              <ChevronRight className="h-3 w-3 mx-0.5 text-muted-foreground/50 transition-opacity" />
             )}
             <span
               className={
                 index === segments.length - 1
-                  ? 'text-accent font-medium'
-                  : 'text-muted-foreground'
+                  ? 'text-accent font-medium transition-colors'
+                  : 'text-muted-foreground transition-colors hover:text-muted-foreground/80'
               }
             >
               {segment}
@@ -59,8 +59,8 @@ export function EMDNBreadcrumb({ path, categoryName, compact = false }: EMDNBrea
 
       {/* Human-readable name */}
       <p className="text-sm">
-        <span className="text-muted-foreground">{level}:</span>{' '}
-        <span className="text-foreground font-medium">{formattedName}</span>
+        <span className="text-muted-foreground transition-colors">{level}:</span>{' '}
+        <span className="text-foreground font-medium transition-colors">{formattedName}</span>
       </p>
     </div>
   )

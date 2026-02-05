@@ -1,10 +1,9 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useDeferredValue } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { useTranslations } from 'next-intl'
-import { Plus } from 'lucide-react'
-import { motion, AnimatePresence } from 'motion/react'
+import { Plus, Loader2 } from 'lucide-react'
 import { DataTable, useColumnVisibility } from './table/data-table'
 import { useColumns } from './table/columns'
 import { ProductSheet } from './product/product-sheet'
@@ -40,51 +39,26 @@ export function CatalogClient({
   const [selectedProduct, setSelectedProduct] = useState<ProductWithRelations | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
   const [extractionSheetOpen, setExtractionSheetOpen] = useState(false)
-  const [isTransitioning, setIsTransitioning] = useState(false)
   const searchParams = useSearchParams()
-  const prevParamsRef = useRef(searchParams.toString())
 
   // Column visibility state with localStorage persistence
   const { visibility: columnVisibility, setVisibility: setColumnVisibility } = useColumnVisibility()
 
-  // Track filter changes for loading state
-  useEffect(() => {
-    const currentParams = searchParams.toString()
-    if (prevParamsRef.current !== currentParams) {
-      setIsTransitioning(true)
-      prevParamsRef.current = currentParams
-    }
-  }, [searchParams])
+  // Use deferred value for smooth transitions - shows stale data while loading
+  const deferredProducts = useDeferredValue(products)
+  const isTransitioning = deferredProducts !== products
 
-  // Reset transition state when new data arrives
-  useEffect(() => {
-    if (isTransitioning) {
-      const timer = setTimeout(() => setIsTransitioning(false), 100)
-      return () => clearTimeout(timer)
-    }
-  }, [products, isTransitioning])
-
-  // Memoized callbacks for product actions
-  const handleViewProduct = useCallback((product: ProductWithRelations) => {
-    setSelectedProduct(product)
-    setSheetOpen(true)
-  }, [])
-
-  const handleEditProduct = useCallback((product: ProductWithRelations) => {
-    setSelectedProduct(product)
-    setSheetOpen(true)
-  }, [])
-
-  const handleDeleteProduct = useCallback((product: ProductWithRelations) => {
+  // Memoized callback for opening product sheet (handles view, edit, and delete)
+  const handleOpenProduct = useCallback((product: ProductWithRelations) => {
     setSelectedProduct(product)
     setSheetOpen(true)
   }, [])
 
   // Use memoized columns hook
   const columns = useColumns(
-    handleViewProduct,
-    handleEditProduct,
-    handleDeleteProduct,
+    handleOpenProduct,
+    handleOpenProduct,
+    handleOpenProduct,
     emdnCategories,
     columnVisibility,
     manufacturers
@@ -102,7 +76,7 @@ export function CatalogClient({
         </div>
         <button
           onClick={() => setExtractionSheetOpen(true)}
-          className="flex items-center gap-2 bg-button text-button-foreground py-2 px-4 rounded-md font-medium hover:bg-button-hover transition-colors shadow-sm"
+          className="flex items-center gap-2 bg-button text-button-foreground py-2 px-4 rounded-md font-medium hover:bg-button-hover transition-all duration-150 shadow-md hover:shadow-lg active:scale-[0.98]"
         >
           <Plus className="h-4 w-4" />
           {t('catalog.addProduct')}
@@ -115,42 +89,32 @@ export function CatalogClient({
         categories={categories}
       />
 
-      <motion.div
-        animate={{ opacity: isTransitioning ? 0.5 : 1 }}
-        transition={{ duration: 0.15 }}
-        className="relative"
-      >
-        <DataTable
-          columns={columns}
-          data={products}
-          pageCount={pageCount}
-          totalCount={totalCount}
-          currentPage={currentPage}
-          pageSize={pageSize}
-          columnVisibility={columnVisibility}
-          onColumnVisibilityChange={setColumnVisibility}
-        />
-        <AnimatePresence>
-          {isTransitioning && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-              className="absolute inset-0 flex items-center justify-center bg-background/50 backdrop-blur-[1px] rounded-lg"
-            >
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full"
-                />
-                <span className="text-sm">{t('common.loading')}</span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
+      {/* Data table with loading overlay - uses CSS instead of motion for better performance */}
+      <div className="relative">
+        <div
+          className="transition-opacity duration-150"
+          style={{ opacity: isTransitioning ? 0.6 : 1 }}
+        >
+          <DataTable
+            columns={columns}
+            data={deferredProducts}
+            pageCount={pageCount}
+            totalCount={totalCount}
+            currentPage={currentPage}
+            pageSize={pageSize}
+            columnVisibility={columnVisibility}
+            onColumnVisibilityChange={setColumnVisibility}
+          />
+        </div>
+        {isTransitioning && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/40 backdrop-blur-[2px] rounded-lg pointer-events-none">
+            <div className="flex items-center gap-2 text-muted-foreground bg-background/90 px-4 py-2 rounded-md shadow-lg border border-border/60">
+              <Loader2 className="w-5 h-5 animate-spin text-accent" />
+              <span className="text-sm font-medium">{t('common.loading')}</span>
+            </div>
+          </div>
+        )}
+      </div>
       <ProductSheet
         product={selectedProduct}
         open={sheetOpen}

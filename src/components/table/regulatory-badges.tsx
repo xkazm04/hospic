@@ -3,18 +3,12 @@
 import { memo } from "react";
 import { useTranslations } from "next-intl";
 import { Shield, ShieldCheck } from "lucide-react";
+import { MDR_CLASS_STYLES, type MdrClass } from "@/lib/constants/regulatory";
 
 interface RegulatoryBadgesProps {
   ceMarked: boolean;
   mdrClass: "I" | "IIa" | "IIb" | "III" | null;
 }
-
-const MDR_CLASS_COLORS: Record<string, string> = {
-  I: "bg-green-100 text-green-700 border-green-200",
-  IIa: "bg-yellow-100 text-yellow-700 border-yellow-200",
-  IIb: "bg-orange-100 text-orange-700 border-orange-200",
-  III: "bg-red-100 text-red-700 border-red-200",
-};
 
 export const RegulatoryBadges = memo(function RegulatoryBadges({
   ceMarked,
@@ -42,7 +36,7 @@ export const RegulatoryBadges = memo(function RegulatoryBadges({
       {/* MDR Class Badge */}
       {mdrClass && (
         <div
-          className={`px-1.5 py-0.5 rounded text-xs font-medium border ${MDR_CLASS_COLORS[mdrClass] || "bg-muted text-muted-foreground border-border"}`}
+          className={`px-1.5 py-0.5 rounded text-xs font-medium border ${MDR_CLASS_STYLES[mdrClass as MdrClass]?.badge || "bg-muted text-muted-foreground border-border"}`}
           title={`${t('mdrClass')} ${mdrClass}`}
         >
           {mdrClass}

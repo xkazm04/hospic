@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useCallback, useMemo, memo } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { motion, AnimatePresence } from "motion/react";
-import { ChevronDown, Check, X, Search } from "lucide-react";
+import { Check, Search } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { useUrlFilterMulti } from "@/lib/hooks/use-url-filter";
+import { DropdownFilter } from "@/components/filters/dropdown-filter";
 
 interface ManufacturerFilterProps {
   manufacturers: string[];
@@ -19,14 +19,11 @@ export const ManufacturerFilter = memo(function ManufacturerFilter({
   const tc = useTranslations("common");
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  const selectedManufacturers = useMemo(() => {
-    const param = searchParams.get("manufacturer");
-    if (!param) return [];
-    return param.split(",").filter(Boolean).map(decodeURIComponent);
-  }, [searchParams]);
+  const {
+    values: selectedManufacturers,
+    toggleValue,
+    clearValues,
+  } = useUrlFilterMulti("manufacturer", { encode: true });
 
   const hasFilters = selectedManufacturers.length > 0;
 
@@ -37,83 +34,32 @@ export const ManufacturerFilter = memo(function ManufacturerFilter({
     return manufacturers.filter((m) => m.toLowerCase().includes(query));
   }, [manufacturers, searchQuery]);
 
-  const updateFilters = useCallback(
-    (newSelected: string[]) => {
-      const params = new URLSearchParams(searchParams.toString());
-      if (newSelected.length > 0) {
-        params.set("manufacturer", newSelected.map(encodeURIComponent).join(","));
-      } else {
-        params.delete("manufacturer");
-      }
-      params.set("page", "1");
-      router.push(`?${params.toString()}`);
-    },
-    [router, searchParams]
-  );
-
   const toggleManufacturer = useCallback(
     (manufacturer: string) => {
       const isSelected = selectedManufacturers.includes(manufacturer);
-      if (isSelected) {
-        updateFilters(selectedManufacturers.filter((m) => m !== manufacturer));
-      } else {
-        updateFilters([...selectedManufacturers, manufacturer]);
-      }
+      toggleValue(manufacturer, !isSelected);
     },
-    [selectedManufacturers, updateFilters]
+    [selectedManufacturers, toggleValue]
   );
 
   const clearFilters = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
-      updateFilters([]);
+      clearValues();
     },
-    [updateFilters]
+    [clearValues]
   );
 
   return (
-    <div className={`relative ${className}`}>
-      <div className="flex items-center gap-1">
-        <button
-          onClick={() => setIsOpen(!isOpen)}
-          className={`
-            flex items-center gap-1 font-medium text-xs uppercase tracking-wide transition-colors
-            ${hasFilters ? "text-accent" : "text-muted-foreground hover:text-foreground"}
-          `}
-        >
-          <span>{t("manufacturer")}</span>
-          <ChevronDown
-            className={`h-3 w-3 transition-transform ${isOpen ? "rotate-180" : ""}`}
-          />
-        </button>
-        {hasFilters && (
-          <button
-            onClick={clearFilters}
-            className="p-0.5 rounded hover:bg-muted transition-colors"
-            title={t("clearManufacturer")}
-          >
-            <X className="h-3 w-3" />
-          </button>
-        )}
-      </div>
-
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            {/* Backdrop */}
-            <div
-              className="fixed inset-0 z-40"
-              onClick={() => setIsOpen(false)}
-            />
-
-            {/* Dropdown */}
-            <motion.div
-              initial={{ opacity: 0, y: -8, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -8, scale: 0.95 }}
-              transition={{ duration: 0.15 }}
-              className="absolute left-0 top-full mt-1 z-50 bg-background border border-border rounded-lg shadow-lg py-1 min-w-[220px] max-w-[300px]"
-            >
+    <DropdownFilter
+      label={t("manufacturer")}
+      hasFilters={hasFilters}
+      onClear={clearFilters}
+      clearTitle={t("clearManufacturer")}
+      className={className}
+      minWidth="220px"
+      maxWidth="300px"
+    >
               {/* Search input */}
               {manufacturers.length > 5 && (
                 <div className="px-3 py-2 border-b border-border">
@@ -181,10 +127,6 @@ export const ManufacturerFilter = memo(function ManufacturerFilter({
                   </p>
                 )}
               </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </div>
+    </DropdownFilter>
   );
 });

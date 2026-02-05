@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useState, useEffect, useMemo, useTransition } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { ChevronRight, FolderTree, Check, Loader2 } from "lucide-react";
 import { useCategories, useCategoryAncestors } from "@/lib/query/hooks";
 import type { CategoryNode } from "@/lib/queries";
 import { simplifyChildName } from "@/lib/utils/format-category";
+import { useLocalizedCategoryName } from "@/lib/utils/use-localized-category";
+import { useUrlFilter } from "@/lib/hooks/use-url-filter";
 
 interface CategoryTreeProps {
   /** Initial categories for hydration (optional - will fetch if not provided) */
@@ -48,10 +50,14 @@ function CategoryItem({
   const isSelected = selectedId === category.id;
   const isExpanded = expandedIds.has(category.id);
 
+  // Get localized name based on current locale
+  const localizedName = useLocalizedCategoryName(category);
+  const localizedParentName = parentName; // Parent name should also be localized by parent component
+
   // Format the display name - remove redundant parent context
   const displayName = useMemo(() => {
-    return simplifyChildName(category.name, parentName);
-  }, [category.name, parentName]);
+    return simplifyChildName(localizedName, localizedParentName);
+  }, [localizedName, localizedParentName]);
 
   const handleClick = () => {
     if (isSelected) {
@@ -72,9 +78,10 @@ function CategoryItem({
         className={`
           group flex items-center gap-1 py-1.5 px-2 rounded-md cursor-pointer
           transition-all duration-150
+          focus-within:ring-2 focus-within:ring-accent focus-within:ring-offset-1
           ${isSelected
-            ? "bg-accent text-accent-foreground"
-            : "hover:bg-muted text-foreground"
+            ? "bg-accent text-accent-foreground shadow-sm hover:shadow-md"
+            : "hover:bg-green-light/30 text-foreground hover:shadow-sm active:scale-[0.99]"
           }
         `}
         style={{ paddingLeft: `${depth * 16 + 8}px` }}
@@ -85,8 +92,9 @@ function CategoryItem({
           <button
             onClick={handleExpandClick}
             className={`
-              p-0.5 rounded transition-colors
-              ${isSelected ? "hover:bg-accent-foreground/20" : "hover:bg-muted-foreground/20"}
+              p-0.5 rounded transition-all duration-150
+              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1
+              ${isSelected ? "hover:bg-accent-foreground/20 active:scale-90" : "hover:bg-muted-foreground/20 active:scale-90"}
             `}
           >
             <motion.div
@@ -107,14 +115,14 @@ function CategoryItem({
 
         {/* Product count */}
         {category.productCount > 0 && (
-          <span className={`text-xs shrink-0 ${isSelected ? "text-accent-foreground/80" : "text-muted-foreground"}`}>
+          <span className={`text-xs shrink-0 font-medium transition-colors ${isSelected ? "text-accent-foreground/80" : "text-muted-foreground"}`}>
             {category.productCount}
           </span>
         )}
 
         {/* Selection indicator */}
         {isSelected && (
-          <Check className="h-3.5 w-3.5 shrink-0" />
+          <Check className="h-3.5 w-3.5 shrink-0 animate-in zoom-in-50 duration-200" />
         )}
       </div>
 
@@ -135,7 +143,7 @@ function CategoryItem({
                 selectedId={selectedId}
                 onSelect={onSelect}
                 depth={depth + 1}
-                parentName={category.name}
+                parentName={localizedName}
                 expandedIds={expandedIds}
                 onToggleExpand={onToggleExpand}
               />
@@ -148,14 +156,14 @@ function CategoryItem({
 }
 
 export function CategoryTree({ initialCategories }: CategoryTreeProps) {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const selectedId = searchParams.get("category");
+  const [isPending, startTransition] = useTransition();
+  const [selectedId, setCategory] = useUrlFilter("category");
 
   // Fetch categories with TanStack Query (with optional hydration)
   const { data: categories = [], isLoading, error } = useCategories(initialCategories);
 
-  // Get ancestors for auto-expansion using cached data
+  // Get ancestors for auto-expansion using cached data (now O(1) with lookup maps)
   const ancestors = useCategoryAncestors(selectedId);
   // Create stable string key for dependency tracking
   const ancestorsKey = ancestors.join(',');
@@ -171,14 +179,10 @@ export function CategoryTree({ initialCategories }: CategoryTreeProps) {
   }, [selectedId, ancestorsKey]); // Use stable string key instead of array
 
   const handleSelect = (id: string | null) => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (id) {
-      params.set("category", id);
-    } else {
-      params.delete("category");
-    }
-    params.set("page", "1");
-    router.push(`?${params.toString()}`);
+    // Use startTransition to keep UI responsive during navigation
+    startTransition(() => {
+      setCategory(id);
+    });
   };
 
   const handleToggleExpand = (id: string) => {
@@ -223,7 +227,7 @@ export function CategoryTree({ initialCategories }: CategoryTreeProps) {
   // Loading state (only shows if no initial data provided)
   if (isLoading && categories.length === 0) {
     return (
-      <div className="flex items-center justify-center py-8">
+      <div className="flex items-center justify-center py-8 animate-in fade-in duration-300">
         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         <span className="ml-2 text-sm text-muted-foreground">Loading categories...</span>
       </div>
@@ -233,10 +237,10 @@ export function CategoryTree({ initialCategories }: CategoryTreeProps) {
   // Error state
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center py-6 text-center px-4">
-        <FolderTree className="h-8 w-8 text-destructive/40 mb-2" />
-        <p className="text-sm text-destructive">Failed to load categories</p>
-        <p className="text-xs text-muted-foreground mt-1">
+      <div className="flex flex-col items-center justify-center py-6 text-center px-4 animate-in fade-in duration-300">
+        <FolderTree className="h-8 w-8 text-destructive/40 mb-2 transition-colors" />
+        <p className="text-sm text-destructive font-medium">Failed to load categories</p>
+        <p className="text-xs text-muted-foreground mt-1 transition-colors">
           {error instanceof Error ? error.message : 'Unknown error'}
         </p>
       </div>
@@ -246,10 +250,10 @@ export function CategoryTree({ initialCategories }: CategoryTreeProps) {
   // Empty state
   if (categories.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-6 text-center px-4">
-        <FolderTree className="h-8 w-8 text-muted-foreground/40 mb-2" />
-        <p className="text-sm text-muted-foreground">No categorized products</p>
-        <p className="text-xs text-muted-foreground/70 mt-1">
+      <div className="flex flex-col items-center justify-center py-6 text-center px-4 animate-in fade-in duration-300">
+        <FolderTree className="h-8 w-8 text-muted-foreground/40 mb-2 transition-opacity" />
+        <p className="text-sm text-muted-foreground font-medium">No categorized products</p>
+        <p className="text-xs text-muted-foreground/70 mt-1 transition-colors">
           Products need EMDN categories assigned to enable filtering
         </p>
       </div>
@@ -262,14 +266,14 @@ export function CategoryTree({ initialCategories }: CategoryTreeProps) {
       <div className="flex justify-end px-1">
         <button
           onClick={toggleAllExpanded}
-          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          className="text-xs font-medium text-muted-foreground hover:text-foreground transition-all duration-150 px-2 py-1 rounded-md hover:bg-muted/50 hover:shadow-sm active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1"
         >
           {isAllExpanded ? "Collapse all" : "Expand all"}
         </button>
       </div>
 
       {/* Category tree */}
-      <div className="space-y-0.5 max-h-[calc(100vh-350px)] overflow-y-auto scrollbar-thin">
+      <div className="space-y-0.5 max-h-[calc(100vh-350px)] overflow-y-auto scrollbar-thin animate-in fade-in slide-in-from-top-2 duration-300">
         {categories.map((category) => (
           <CategoryItem
             key={category.id}

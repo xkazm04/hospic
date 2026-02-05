@@ -29,6 +29,7 @@ export interface ProductPriceComparison {
   price: number | null;
   vendor_id: string | null;
   vendor_name: string | null;
+  emdn_code: string | null;
   similarity: number;
 }
 
@@ -69,7 +70,6 @@ export async function findSimilarProducts(
   });
 
   if (error) {
-    console.error("Similarity search error:", error);
     return { success: false, error: error.message };
   }
 
@@ -97,7 +97,6 @@ export async function getProductPriceComparison(
   });
 
   if (error) {
-    console.error("Price comparison error:", error);
     return { success: false, error: error.message };
   }
 

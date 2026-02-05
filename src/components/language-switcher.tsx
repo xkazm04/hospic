@@ -2,7 +2,7 @@
 
 import { useLocale, useTranslations } from 'next-intl';
 import { Languages } from 'lucide-react';
-import { locales, type Locale } from '@/i18n/config';
+import { locales, LOCALE_COOKIE_NAME, type Locale } from '@/i18n/config';
 
 const localeLabels: Record<Locale, { label: string; flag: string; name: string }> = {
   en: { label: 'EN', flag: 'GB', name: 'English' },
@@ -24,7 +24,7 @@ export function LanguageSwitcher() {
     localStorage.setItem('locale', newLocale);
 
     // Sync to cookie for SSR
-    document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000;SameSite=Lax`;
+    document.cookie = `${LOCALE_COOKIE_NAME}=${newLocale};path=/;max-age=31536000;SameSite=Lax`;
 
     // Reload to apply new locale
     window.location.reload();

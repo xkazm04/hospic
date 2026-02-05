@@ -91,3 +91,20 @@ export function resetCircuit(): void {
 export function getCircuitState(): Readonly<CircuitState> {
   return { ...circuitState };
 }
+
+/**
+ * Check circuit breaker and log any errors before rethrowing.
+ * Combines circuit check and error handling in a single helper.
+ * @param context - Context label for logging (e.g., "Supabase Client", "Supabase Server")
+ */
+export function checkCircuitOrThrow(context: string): void {
+  try {
+    checkCircuit();
+  } catch (error) {
+    if (error instanceof CircuitBreakerError) {
+      console.error(`[${context}]`, error.message);
+      throw error;
+    }
+    throw error;
+  }
+}

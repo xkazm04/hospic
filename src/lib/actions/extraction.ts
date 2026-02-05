@@ -71,7 +71,6 @@ async function extractFromPdf(file: File): Promise<ExtractionResult> {
 
     return extractFromContent(content);
   } catch (error) {
-    console.error("PDF extraction error:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to parse PDF file",
@@ -111,7 +110,6 @@ export async function extractFromUrl(url: string): Promise<ExtractionResult> {
 
     return { success: true, data: validated };
   } catch (error) {
-    console.error("URL extraction error:", error);
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to extract from URL",
@@ -144,7 +142,6 @@ export async function extractFromContent(
 
     return { success: true, data: validated };
   } catch (error) {
-    console.error("Extraction error:", error);
     return {
       success: false,
       error:

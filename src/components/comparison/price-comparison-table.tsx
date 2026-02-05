@@ -2,6 +2,7 @@
 
 import { useTranslations, useLocale } from 'next-intl'
 import type { ProductPriceComparison } from '@/lib/actions/similarity'
+import { formatPrice as formatPriceUtil } from '@/lib/utils/format-price'
 
 interface PriceComparisonTableProps {
   products: ProductPriceComparison[]
@@ -19,7 +20,7 @@ export function PriceComparisonTable({
 
   const formatPrice = (price: number | null): string => {
     if (price === null) return t('notAvailable')
-    return `${price.toLocaleString(locale === 'cs' ? 'cs-CZ' : 'en-US')} CZK`
+    return formatPriceUtil(price, locale)
   }
 
   // Loading state with skeleton rows
@@ -30,7 +31,7 @@ export function PriceComparisonTable({
           <thead className="bg-muted">
             <tr>
               <th className="text-left px-4 py-2 text-sm font-medium">{t('product')}</th>
-              <th className="text-left px-4 py-2 text-sm font-medium">{t('vendor')}</th>
+              <th className="text-left px-4 py-2 text-sm font-medium">EMDN</th>
               <th className="text-right px-4 py-2 text-sm font-medium">{t('price')}</th>
               <th className="text-right px-4 py-2 text-sm font-medium">{t('match')}</th>
             </tr>
@@ -74,7 +75,7 @@ export function PriceComparisonTable({
         <thead className="bg-muted">
           <tr>
             <th className="text-left px-4 py-2 text-sm font-medium">{t('product')}</th>
-            <th className="text-left px-4 py-2 text-sm font-medium">{t('vendor')}</th>
+            <th className="text-left px-4 py-2 text-sm font-medium">EMDN</th>
             <th className="text-right px-4 py-2 text-sm font-medium">{t('price')}</th>
             <th className="text-right px-4 py-2 text-sm font-medium">{t('match')}</th>
           </tr>
@@ -94,10 +95,14 @@ export function PriceComparisonTable({
                       <span className="ml-2 text-xs text-accent font-normal">({t('current')})</span>
                     )}
                   </div>
-                  <div className="text-xs text-muted-foreground font-mono">{p.sku}</div>
+                  <div className="text-xs text-muted-foreground">
+                    <span className="font-medium">{p.vendor_name ?? t('unknown')}</span>
+                    <span className="mx-1">•</span>
+                    <span className="font-mono">{p.sku}</span>
+                  </div>
                 </td>
-                <td className="px-4 py-2 text-sm">
-                  {p.vendor_name ?? t('unknown')}
+                <td className="px-4 py-2 text-sm font-mono">
+                  {p.emdn_code ?? '-'}
                 </td>
                 <td className="px-4 py-2 text-sm text-right font-medium">
                   {formatPrice(p.price)}

@@ -5,6 +5,7 @@ import { useChat } from '@ai-sdk/react';
 import { MessageList } from './message-list';
 import { ChatInput } from './chat-input';
 import { ErrorBubble } from './error-bubble';
+import { TypingIndicator } from './typing-indicator';
 import { classifyError } from '@/lib/chat/errors';
 import { MAX_MESSAGES } from '@/lib/chat/constants';
 
@@ -17,6 +18,7 @@ export function ChatPanel({ isOpen }: ChatPanelProps) {
   const [retryAttempted, setRetryAttempted] = useState(false);
 
   const isStreaming = status === 'streaming';
+  const showTypingIndicator = status === 'submitted';
   const isChatFull = messages.length >= MAX_MESSAGES;
 
   // CRITICAL: Cleanup on close - abort any active streaming
@@ -97,6 +99,7 @@ export function ChatPanel({ isOpen }: ChatPanelProps) {
         onCategorySelect={handleCategorySelect}
         onViewInCatalog={handleViewInCatalog}
       />
+      {showTypingIndicator && <TypingIndicator />}
       {showError && classifiedError && (
         <ErrorBubble
           message={classifiedError.userMessage}

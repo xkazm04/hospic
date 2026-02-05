@@ -80,10 +80,11 @@ Plans:
   2. External suggestions include source citations (links to original sources)
   3. Results are clearly labeled as "external" to distinguish from catalog data
   4. AI uses Gemini Google Search grounding for EU medical device market queries
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 11-01: TBD
+- [ ] 11-01-PLAN.md - External search tool (isolated Gemini grounding wrapper)
+- [ ] 11-02-PLAN.md - External result rendering (ExternalProductCard + message-list integration)
 
 ### Phase 12: UI Polish and Integration
 **Goal**: Chat interface has production-ready UX with full catalog integration
@@ -108,7 +109,7 @@ Plans:
 | 8. Streaming Foundation | v1.2 | 2/2 | Complete | 2026-02-05 |
 | 9. Catalog Search Tools | v1.2 | 2/2 | Complete | 2026-02-05 |
 | 10. Context and Error Handling | v1.2 | 2/2 | Complete | 2026-02-05 |
-| 11. External Web Search | v1.2 | 0/? | Not started | - |
+| 11. External Web Search | v1.2 | 0/2 | Planned | - |
 | 12. UI Polish and Integration | v1.2 | 0/? | Not started | - |
 
 ---

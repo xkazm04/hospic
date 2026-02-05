@@ -7,6 +7,7 @@ import { ExternalProductCard } from './external-product-card';
 import { ComparisonTable } from './comparison-table';
 import { CategoryChips } from './category-chips';
 import { LoadingSpinner } from './loading-spinner';
+import { StarterPrompts } from './starter-prompts';
 import type { UIMessage } from 'ai';
 import type { ProductWithRelations } from '@/lib/types';
 import type { ProductPriceComparison } from '@/lib/actions/similarity';
@@ -17,6 +18,7 @@ interface MessageListProps {
   onComparePrice: (productId: string) => void;
   onCategorySelect: (categoryId: string, categoryName: string) => void;
   onViewInCatalog: (productId: string) => void;
+  onSendMessage: (text: string) => void;
 }
 
 // Type guards for tool parts
@@ -67,6 +69,7 @@ export function MessageList({
   onComparePrice,
   onCategorySelect,
   onViewInCatalog,
+  onSendMessage,
 }: MessageListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -209,9 +212,7 @@ export function MessageList({
   return (
     <div ref={containerRef} className="flex-1 overflow-y-auto px-4 py-4">
       {messages.length === 0 ? (
-        <div className="h-full flex items-center justify-center text-muted-foreground text-sm">
-          <p>Ask me anything about medical devices...</p>
-        </div>
+        <StarterPrompts onSelect={onSendMessage} />
       ) : (
         messages.map((message) => (
           <div key={message.id}>

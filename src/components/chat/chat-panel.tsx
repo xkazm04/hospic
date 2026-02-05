@@ -98,6 +98,7 @@ export function ChatPanel({ isOpen }: ChatPanelProps) {
         onComparePrice={handleComparePrice}
         onCategorySelect={handleCategorySelect}
         onViewInCatalog={handleViewInCatalog}
+        onSendMessage={handleSubmit}
       />
       {showTypingIndicator && <TypingIndicator />}
       {showError && classifiedError && (

@@ -5,6 +5,13 @@ export const CHAT_MODEL = 'gemini-2.5-flash';
 export const MAX_MESSAGES = 50; // Hard cap per CONTEXT.md
 export const CHAT_FULL_MESSAGE = 'Chat full. Clear to continue.';
 
+// Starter prompts - feature showcase for new users
+export const STARTER_PROMPTS = [
+  'Search for titanium hip implants',
+  'Compare prices for knee prostheses',
+  'Find EU market alternatives',
+];
+
 // System prompt for MedCatalog Assistant with tool awareness
 export const SYSTEM_PROMPT = `You are MedCatalog Assistant, a helpful AI for orthopedic medical device procurement.
 

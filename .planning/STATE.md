@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-05)
 ## Current Position
 
 Phase: 11 of 12 (External Web Search)
-Plan: 1 of 2 complete
-Status: In progress
-Last activity: 2026-02-05 - Completed 11-01-PLAN.md
+Plan: 2 of 2 complete
+Status: Phase complete
+Last activity: 2026-02-05 - Completed 11-02-PLAN.md
 
-Progress: [#####-----] 50% (1/2 plans complete in Phase 11)
+Progress: [##########] 100% (2/2 plans complete in Phase 11)
 
 ## Milestone History
 
@@ -82,6 +82,12 @@ v1.2 decisions (implemented in 11-01):
 - Return hasResults boolean to distinguish "no results" from "search failed"
 - Limit external sources to 5 per CONTEXT.md
 
+v1.2 decisions (implemented in 11-02):
+
+- ExternalProductCard with blue accent border (border-2 border-blue-500) for visual distinction
+- Silent URL filtering - broken/invalid source links are hidden, not shown with warnings
+- No action buttons on external cards (user clicks through to source for details)
+
 ### Technical Debt
 
 - Permissive RLS policies need tightening when auth is added
@@ -97,7 +103,7 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-05T14:27:35Z
-Stopped at: Completed 11-01-PLAN.md
+Last session: 2026-02-05T14:35:00Z
+Stopped at: Completed 11-02-PLAN.md
 Resume file: None
-Next action: Execute 11-02-PLAN.md (External Result UI)
+Next action: Phase 11 complete - ready for Phase 12

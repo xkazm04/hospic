@@ -1,7 +1,13 @@
-import { tool } from 'ai';
+import { tool, generateText } from 'ai';
+import { createGoogleGenerativeAI } from '@ai-sdk/google';
 import { z } from 'zod/v4';
 import { getProducts } from '@/lib/queries';
 import { getProductPriceComparison } from '@/lib/actions/similarity';
+
+// Create isolated Google provider for web search tool
+const google = createGoogleGenerativeAI({
+  apiKey: process.env.GEMINI_API_KEY,
+});
 
 /**
  * Search the product catalog for medical devices.
@@ -119,5 +125,104 @@ export const suggestCategories = tool({
       suggestions,
       totalProducts: result.count,
     };
+  },
+});
+
+/**
+ * Search the web for EU medical device market alternatives.
+ * Uses isolated generateText call with Google Search grounding.
+ * CRITICAL: Cannot combine google.tools.googleSearch() with custom tools in same request.
+ */
+export const searchExternalProducts = tool({
+  description:
+    'Search the web for EU medical device market alternatives to a catalog product. Only use when user explicitly asks for "alternatives" or "search the web". Must reference a specific catalog product.',
+  inputSchema: z.object({
+    productName: z.string().describe('Name of the catalog product to find alternatives for'),
+    productCategory: z
+      .string()
+      .optional()
+      .describe('EMDN category or product type for context'),
+    vendorName: z
+      .string()
+      .optional()
+      .describe('Current vendor for exclusion context'),
+  }),
+  execute: async ({ productName, productCategory, vendorName }) => {
+    try {
+      // Build search context - MUST include 'EU market' and 'CE marked'
+      const contextParts = [
+        productName,
+        productCategory,
+        'orthopedic medical device',
+        'EU market',
+        'CE marked',
+        'alternatives',
+        vendorName ? `alternative to ${vendorName}` : '',
+      ].filter(Boolean);
+      const searchContext = contextParts.join(' ');
+
+      // Isolated generateText call with provider tool (cannot mix with custom tools)
+      const response = await generateText({
+        model: google('gemini-2.5-flash'),
+        tools: {
+          google_search: google.tools.googleSearch({}),
+        },
+        prompt: `Find 3-5 EU market alternatives to this orthopedic medical device: ${searchContext}
+
+For each alternative found:
+1. Extract the product name
+2. Note the manufacturer
+3. Keep the source URL
+
+Focus on CE-marked devices from European manufacturers or distributors.`,
+        temperature: 1.0, // Recommended for grounding
+      });
+
+      // Extract grounding metadata - handle undefined gracefully
+      const groundingMetadata = (response.providerMetadata?.google as any)?.groundingMetadata;
+
+      // If no grounding metadata, return graceful failure
+      if (!groundingMetadata) {
+        return {
+          hasResults: false,
+          summary: 'Unable to retrieve web search results.',
+          sources: [],
+          searchQueries: [],
+        };
+      }
+
+      // Extract and validate sources from grounding chunks
+      const sources = (groundingMetadata.groundingChunks || [])
+        .filter((chunk: any) => chunk.web?.uri)
+        .map((chunk: any) => {
+          try {
+            return {
+              url: chunk.web.uri,
+              title: chunk.web.title || 'External Source',
+              domain: new URL(chunk.web.uri).hostname.replace('www.', ''),
+            };
+          } catch {
+            // Invalid URL - skip this source
+            return null;
+          }
+        })
+        .filter(Boolean)
+        .slice(0, 5); // Limit to 5 sources per CONTEXT.md
+
+      return {
+        summary: response.text,
+        sources,
+        searchQueries: groundingMetadata.webSearchQueries || [],
+        hasResults: sources.length > 0,
+      };
+    } catch (error) {
+      console.error('[searchExternalProducts] Error:', error);
+      return {
+        hasResults: false,
+        summary: 'Web search failed. Please try again.',
+        sources: [],
+        searchQueries: [],
+      };
+    }
   },
 });

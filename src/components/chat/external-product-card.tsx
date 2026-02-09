@@ -12,13 +12,13 @@ export function ExternalProductCard({
   sourceDomain,
 }: ExternalProductCardProps) {
   return (
-    <div className="border-2 border-blue-500 bg-blue-50/10 rounded-lg p-3 mb-2">
+    <div className="border border-blue-200 bg-blue-50/30 rounded-lg p-3 mb-2">
       <h4 className="font-medium text-sm">{name}</h4>
       <a
         href={sourceUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-xs text-blue-600 hover:underline"
+        className="text-xs text-blue-subtle hover:underline"
       >
         {sourceDomain}
       </a>

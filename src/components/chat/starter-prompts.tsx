@@ -7,28 +7,22 @@ import { STARTER_PROMPTS } from '@/lib/chat/constants';
 interface StarterPromptsProps {
   onSelect: (prompt: string) => void;
   activeSearch?: string;
-  activeVendor?: string;
   activeCategory?: string;
 }
 
 function getContextualPrompts(
   search?: string,
-  vendor?: string,
   category?: string
 ): string[] {
   const prompts: string[] = [];
 
-  if (vendor) {
-    prompts.push(`Compare prices from ${vendor}`);
-    prompts.push(`Find alternatives to ${vendor} products`);
-  }
   if (category) {
     prompts.push(`Search for ${category} products`);
     prompts.push(`Compare options in ${category}`);
   }
   if (search) {
-    prompts.push(`Tell me more about ${search}`);
-    prompts.push(`Compare prices for ${search}`);
+    prompts.push(`Show products matching ${search}`);
+    prompts.push(`Look up reference prices for ${search}`);
   }
 
   // Fill remaining slots with defaults
@@ -40,13 +34,13 @@ function getContextualPrompts(
   return prompts.slice(0, 3);
 }
 
-export function StarterPrompts({ onSelect, activeSearch, activeVendor, activeCategory }: StarterPromptsProps) {
+export function StarterPrompts({ onSelect, activeSearch, activeCategory }: StarterPromptsProps) {
   const prompts = useMemo(
-    () => getContextualPrompts(activeSearch, activeVendor, activeCategory),
-    [activeSearch, activeVendor, activeCategory]
+    () => getContextualPrompts(activeSearch, activeCategory),
+    [activeSearch, activeCategory]
   );
 
-  const hasContext = activeSearch || activeVendor || activeCategory;
+  const hasContext = activeSearch || activeCategory;
 
   return (
     <div className="h-full flex flex-col items-center justify-center gap-4 px-4">

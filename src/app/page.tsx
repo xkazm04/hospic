@@ -159,8 +159,8 @@ export default async function Home({ searchParams }: HomeProps) {
           </div>
         </div>
 
-        {/* Chat Widget — dev only for now */}
-        {isDev && <ChatWidget />}
+        {/* Chat Widget */}
+        <ChatWidget />
 
         {/* Global overlays */}
         <CommandPalette />

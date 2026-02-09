@@ -294,7 +294,64 @@
     "goToGemini": "Přejít na Gemini",
     "goToEudamed": "Přejít na EUDAMED",
     "goToLPPR": "Přejít na LPPR (Francie)",
-    "goToKategorizacia": "Přejít na MZ SR (Slovensko)"
+    "goToKategorizacia": "Přejít na MZ SR (Slovensko)",
+    "modalTitle": "Průzkum:",
+    "set": "Set",
+    "unknown": "Neznámý",
+    "failed": "Průzkum selhal",
+    "showLogs": "Zobrazit logy ({count})",
+    "startingResearch": "Zahajuji průzkum pro {code}...",
+    "executionStarted": "Spuštěno: {id}",
+    "connectedToClaude": "Připojeno k Claude {model}",
+    "usingTool": "Používám nástroj: {name}",
+    "toolResult": "Výsledek nástroje přijat",
+    "failedToStart": "Nepodařilo se spustit",
+    "timedOut": "Vypršel časový limit čekání na výsledek",
+    "components": {
+      "title": "Komponenty ({count})",
+      "component": "Komponenta",
+      "evidence": "Důkaz",
+      "price": "Cena",
+      "percent": "%",
+      "confidence": "Spol.",
+      "total": "Celkem",
+      "ok": "OK",
+      "offBy": "Odchylka {percent}%"
+    },
+    "procedure": {
+      "title": "Rozpad nákladů na výkon",
+      "implantTotal": "Implantát celkem:",
+      "procedureOnly": "Pouze výkon:",
+      "description": "Náklady na výkon (bez implantátů)"
+    },
+    "validation": {
+      "title": "Ověření",
+      "passed": "Ověření prošlo",
+      "warnings": "Varování ověření",
+      "fractionsSumToOne": "Podíly dohromady dávají 1.0",
+      "noComponentExceeds": "Žádná komponenta >50%",
+      "catalogPriceMatch": "Shoda katalogové ceny",
+      "clinicallyComplete": "Klinicky kompletní"
+    },
+    "evidence": {
+      "catalog": "Katalog",
+      "refPrice": "Ref. cena",
+      "web": "Web",
+      "crossMfr": "Mezi výrobci",
+      "estimate": "Odhad",
+      "unknown": "Neznámý"
+    },
+    "confidence": {
+      "high": "Vysoká spolehlivost",
+      "medium": "Střední spolehlivost",
+      "low": "Nízká spolehlivost"
+    },
+    "reasoning": "Zdůvodnění",
+    "actions": {
+      "acceptAndSave": "Přijmout a uložit",
+      "close": "Zavřít",
+      "cancel": "Zrušit"
+    }
   },
   "referencePricing": {
     "title": "Referenční ceny EU",
@@ -432,5 +489,75 @@
     "regulatory": "Regulace",
     "category": "Kategorie",
     "resetWidths": "Obnovit šířky sloupců"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "backToCatalog": "Zpět do katalogu",
+    "kpi": {
+      "totalProducts": "Celkem produktů",
+      "inCatalog": "v katalogu",
+      "referencePrices": "Referenční ceny",
+      "fromCountries": "z {count} {count, plural, =1 {země} =2 {zemí} =3 {zemí} =4 {zemí} other {zemí}}",
+      "priceCoverage": "Cenové pokrytí",
+      "ofProducts": "produktů",
+      "vendors": "Dodavatelé",
+      "registered": "registrováno",
+      "unprocessedSets": "Nezpracované sety",
+      "setsToDecompose": "setů k dekompozici"
+    },
+    "charts": {
+      "priceScopeDistribution": "Distribuce cenových rozsahů",
+      "setDecompositionProgress": "Průběh dekompozice setů",
+      "ofSets": "z {total} setů",
+      "sourceCountries": "Zdrojové země",
+      "topVendorsByProducts": "Top dodavatelé podle produktů",
+      "topManufacturers": "Top výrobci (ref. ceny)",
+      "productsByCategory": "Produkty podle EMDN kategorie",
+      "products": "Produkty:"
+    }
+  },
+  "sets": {
+    "title": "Průzkumník setů",
+    "stats": {
+      "prices": "cen",
+      "xcCodes": "XC kódů",
+      "manufacturers": "výrobců",
+      "matchedProducts": "spárovaných produktů",
+      "procedure": "výkonů",
+      "decomposed": "dekompozováno"
+    },
+    "filters": {
+      "allManufacturers": "Všichni výrobci ({count})",
+      "clear": "Vymazat",
+      "showing": "Zobrazeno {count} z {total}"
+    },
+    "table": {
+      "code": "Kód",
+      "description": "Popis",
+      "emdn": "EMDN",
+      "mfrs": "Výrobci",
+      "count": "#",
+      "priceRange": "Cenové rozpětí",
+      "match": "Shoda",
+      "scope": "Rozsah",
+      "status": "Stav",
+      "actions": "Akce",
+      "manufacturer": "Výrobce",
+      "priceEUR": "Cena (EUR)",
+      "original": "Původní",
+      "valid": "Platné",
+      "noSetPricesFound": "Nenalezeny žádné ceny setů"
+    },
+    "actions": {
+      "research": "Prozkoumat"
+    },
+    "badges": {
+      "procedure": "Výkon",
+      "mixed": "Smíšené",
+      "set": "Set",
+      "done": "Hotovo",
+      "pending": "Čeká"
+    },
+    "matchedProducts": "Spárované katalogové produkty ({count})"
   }
 }

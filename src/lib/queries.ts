@@ -6,6 +6,9 @@ export interface GetProductsParams {
   page?: number;
   pageSize?: number;
   search?: string;
+  /** When 'or', multi-word searches match ANY word instead of ALL words.
+   *  Useful for natural language queries where AND is too restrictive. */
+  searchMode?: "and" | "or";
   vendor?: string;
   category?: string;
   material?: string;
@@ -85,8 +88,18 @@ export async function getProducts(params: GetProductsParams = {}): Promise<GetPr
         query = query.or(
           `name.ilike.%${escaped}%,sku.ilike.%${escaped}%,description.ilike.%${escaped}%,manufacturer_name.ilike.%${escaped}%`
         );
+      } else if (params.searchMode === 'or') {
+        // OR mode: match ANY word (better for natural language / chat queries)
+        const words = searchQuery.split(/\s+/).filter(w => w.length > 1);
+        if (words.length > 1) {
+          query = query.or(
+            words.map(w => `search_vector.wfts(english).${w}`).join(',')
+          );
+        } else {
+          query = query.textSearch('search_vector', searchQuery, { type: 'websearch', config: 'english' });
+        }
       } else {
-        // Use websearch_to_tsquery via the search_vector column (GIN-indexed, weighted A-D)
+        // Default AND mode: all words must match (websearch_to_tsquery)
         query = query.textSearch('search_vector', searchQuery, { type: 'websearch', config: 'english' });
       }
     }

@@ -39,6 +39,7 @@ export const searchProducts = tool({
       .describe('Number of results to return (default 5)'),
   }),
   execute: async ({ query, category, vendor, material, minPrice, maxPrice, limit }) => {
+    // First try AND mode (all words must match) for precision
     const result = await getProducts({
       search: query,
       category,
@@ -48,6 +49,26 @@ export const searchProducts = tool({
       maxPrice,
       pageSize: limit,
     });
+
+    // If AND returns 0 results and query has multiple words, retry with OR (any word)
+    if (result.count === 0 && query.trim().split(/\s+/).length > 1) {
+      const orResult = await getProducts({
+        search: query,
+        searchMode: 'or',
+        category,
+        vendor,
+        material,
+        minPrice,
+        maxPrice,
+        pageSize: limit,
+      });
+      return {
+        products: orResult.data,
+        totalCount: orResult.count,
+        showing: orResult.data.length,
+      };
+    }
+
     return {
       products: result.data,
       totalCount: result.count,
@@ -90,10 +111,19 @@ export const suggestCategories = tool({
   }),
   execute: async ({ query }) => {
     // Get products matching query to analyze category distribution
-    const result = await getProducts({
+    let result = await getProducts({
       search: query,
       pageSize: 50,
     });
+
+    // If AND returns nothing, retry with OR for broader matches
+    if (result.count === 0 && query.trim().split(/\s+/).length > 1) {
+      result = await getProducts({
+        search: query,
+        searchMode: 'or',
+        pageSize: 50,
+      });
+    }
 
     // Extract unique categories from product results
     const categoryMap = new Map<

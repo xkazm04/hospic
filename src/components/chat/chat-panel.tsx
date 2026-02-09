@@ -247,7 +247,6 @@ export function ChatPanel({ isOpen, persistence }: ChatPanelProps) {
         onFilterVendor={handleFilterVendor}
         onRegenerate={regenerate}
         activeSearch={searchParams.get('search') || undefined}
-        activeVendor={searchParams.get('vendor') ? 'selected vendor' : undefined}
         activeCategory={searchParams.get('category') ? 'selected category' : undefined}
       />
       {showTypingIndicator && <TypingIndicator />}

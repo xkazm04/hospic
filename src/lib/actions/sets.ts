@@ -26,11 +26,14 @@ export async function getSetGroups(): Promise<SetGroupsResult> {
       price_original,
       currency_original,
       source_country,
+      source_name,
       valid_from,
+      notes,
+      extraction_method,
       emdn_leaf_category_id,
       emdn_category_id
     `)
-    .or('price_scope.eq.set,component_type.in.(set,revision_set)')
+    .or('price_scope.eq.set,price_scope.eq.procedure,component_type.in.(set,revision_set)')
     .order('xc_subcode', { ascending: true })
     .order('manufacturer_name', { ascending: true })
     .order('price_eur', { ascending: true })
@@ -80,7 +83,10 @@ export async function getSetGroups(): Promise<SetGroupsResult> {
       price_original: e.price_original,
       currency_original: e.currency_original,
       source_country: e.source_country,
+      source_name: e.source_name,
       valid_from: e.valid_from,
+      notes: e.notes,
+      extraction_method: e.extraction_method,
       emdn_code: emdn?.code ?? null,
       emdn_name: emdn?.name ?? null,
     }
@@ -134,4 +140,129 @@ export async function getSetGroups(): Promise<SetGroupsResult> {
   }
 
   return { entries, matchedProducts }
+}
+
+// ─── Accept Decomposition ───
+
+interface AcceptDecompositionInput {
+  sourceEntryIds: string[]
+  components: Array<{
+    component_type: string
+    emdn_code: string | null
+    description: string
+    estimated_price_eur: number
+    fraction_of_set: number
+    confidence: string
+    reasoning: string
+  }>
+  procedureCost: {
+    implant_total_eur: number
+    procedure_only_eur: number
+    confidence: string
+    reasoning: string
+  } | null
+  sourceEntry: {
+    source_country: string
+    source_name: string | null
+    valid_from: string | null
+    source_code: string | null
+    price_eur: number
+    price_original: number
+    currency_original: string
+    xc_subcode: string | null
+  }
+}
+
+export async function acceptDecomposition(
+  input: AcceptDecompositionInput
+): Promise<{ success: boolean; created: number; error?: string }> {
+  const supabase = await createClient()
+
+  const { sourceEntryIds, components, procedureCost, sourceEntry } = input
+
+  // Resolve EMDN codes to IDs
+  const emdnCodes = components.map((c) => c.emdn_code).filter(Boolean) as string[]
+  let emdnCodeToId: Record<string, string> = {}
+
+  if (emdnCodes.length > 0) {
+    const { data: emdnData } = await supabase
+      .from('emdn_categories')
+      .select('id, code')
+      .in('code', emdnCodes)
+
+    if (emdnData) {
+      emdnCodeToId = Object.fromEntries(emdnData.map((e) => [e.code, e.id]))
+    }
+  }
+
+  // Mark originals as decomposed (append to existing notes)
+  for (const id of sourceEntryIds) {
+    const { data: existing } = await supabase
+      .from('reference_prices')
+      .select('notes')
+      .eq('id', id)
+      .single()
+
+    const existingNotes = existing?.notes || ''
+    const newNotes = existingNotes.includes('[decomposed]')
+      ? existingNotes
+      : `${existingNotes} [decomposed]`.trim()
+
+    await supabase
+      .from('reference_prices')
+      .update({ notes: newNotes })
+      .eq('id', id)
+  }
+
+  // Insert component rows
+  let created = 0
+  for (const comp of components) {
+    const fraction = comp.fraction_of_set
+    const originalPrice = sourceEntry.price_original * fraction
+
+    const emdnId = comp.emdn_code ? emdnCodeToId[comp.emdn_code] : null
+
+    const { error } = await supabase.from('reference_prices').insert({
+      xc_subcode: sourceEntry.xc_subcode,
+      source_code: sourceEntry.source_code ? `${sourceEntry.source_code}/component` : null,
+      price_scope: 'component',
+      price_eur: comp.estimated_price_eur,
+      price_original: Math.round(originalPrice * 100) / 100,
+      currency_original: sourceEntry.currency_original,
+      source_country: sourceEntry.source_country,
+      source_name: sourceEntry.source_name,
+      valid_from: sourceEntry.valid_from,
+      component_type: 'single_component',
+      component_description: comp.description,
+      extraction_method: 'ai_decomposition',
+      notes: `[ai] ${comp.reasoning} (confidence: ${comp.confidence}, fraction: ${Math.round(fraction * 100)}%)`,
+      emdn_leaf_category_id: emdnId,
+      price_type: 'reimbursement_ceiling',
+    })
+
+    if (!error) created++
+  }
+
+  // Insert procedure-only entry if applicable
+  if (procedureCost) {
+    await supabase.from('reference_prices').insert({
+      xc_subcode: sourceEntry.xc_subcode,
+      source_code: sourceEntry.source_code ? `${sourceEntry.source_code}/procedure` : null,
+      price_scope: 'procedure',
+      price_eur: procedureCost.procedure_only_eur,
+      price_original: 0,
+      currency_original: sourceEntry.currency_original,
+      source_country: sourceEntry.source_country,
+      source_name: sourceEntry.source_name,
+      valid_from: sourceEntry.valid_from,
+      component_type: 'procedure_cost',
+      component_description: 'Procedure cost (excl. implants)',
+      extraction_method: 'ai_decomposition',
+      notes: `[ai] ${procedureCost.reasoning} (confidence: ${procedureCost.confidence})`,
+      price_type: 'reimbursement_ceiling',
+    })
+    created++
+  }
+
+  return { success: true, created }
 }

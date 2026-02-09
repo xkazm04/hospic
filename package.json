@@ -18,7 +18,9 @@
     "import:sk-szm": "tsx scripts/import-sk-szm.ts",
     "db:migrate": "tsx scripts/run-migration.ts --all",
     "db:migrate:dry": "tsx scripts/run-migration.ts --dry-run",
-    "db:test": "tsx scripts/test-db-connection.ts"
+    "db:test": "tsx scripts/test-db-connection.ts",
+    "import:gb-nhs": "tsx scripts/import-gb-nhs-tariff.ts",
+    "import:cz-szpcr": "tsx scripts/import-cz-szpcr.ts"
   },
   "dependencies": {
     "@ai-sdk/google": "^3.0.21",

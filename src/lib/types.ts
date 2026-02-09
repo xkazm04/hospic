@@ -89,7 +89,10 @@ export interface SetGroupEntry {
   price_original: number
   currency_original: string
   source_country: string
+  source_name: string | null
   valid_from: string | null
+  notes: string | null
+  extraction_method: string | null
   emdn_code: string | null
   emdn_name: string | null
 }

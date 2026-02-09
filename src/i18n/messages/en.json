@@ -290,7 +290,64 @@
     "goToGemini": "Go to Gemini",
     "goToEudamed": "Go to EUDAMED",
     "goToLPPR": "Go to LPPR (France)",
-    "goToKategorizacia": "Go to MZ SR (Slovakia)"
+    "goToKategorizacia": "Go to MZ SR (Slovakia)",
+    "modalTitle": "Research:",
+    "set": "Set",
+    "unknown": "Unknown",
+    "failed": "Research failed",
+    "showLogs": "Show logs ({count})",
+    "startingResearch": "Starting research for {code}...",
+    "executionStarted": "Execution started: {id}",
+    "connectedToClaude": "Connected to Claude {model}",
+    "usingTool": "Using tool: {name}",
+    "toolResult": "Tool result received",
+    "failedToStart": "Failed to start",
+    "timedOut": "Timed out waiting for result",
+    "components": {
+      "title": "Components ({count})",
+      "component": "Component",
+      "evidence": "Evidence",
+      "price": "Price",
+      "percent": "%",
+      "confidence": "Conf",
+      "total": "Total",
+      "ok": "OK",
+      "offBy": "Off by {percent}%"
+    },
+    "procedure": {
+      "title": "Procedure Cost Breakdown",
+      "implantTotal": "Implant total:",
+      "procedureOnly": "Procedure only:",
+      "description": "Procedure cost (excl. implants)"
+    },
+    "validation": {
+      "title": "Validation",
+      "passed": "Validation Passed",
+      "warnings": "Validation Warnings",
+      "fractionsSumToOne": "Fractions sum to 1.0",
+      "noComponentExceeds": "No component >50%",
+      "catalogPriceMatch": "Catalog price match",
+      "clinicallyComplete": "Clinically complete"
+    },
+    "evidence": {
+      "catalog": "Catalog",
+      "refPrice": "Ref Price",
+      "web": "Web",
+      "crossMfr": "Cross-mfr",
+      "estimate": "Estimate",
+      "unknown": "Unknown"
+    },
+    "confidence": {
+      "high": "High confidence",
+      "medium": "Medium confidence",
+      "low": "Low confidence"
+    },
+    "reasoning": "Reasoning",
+    "actions": {
+      "acceptAndSave": "Accept & Save",
+      "close": "Close",
+      "cancel": "Cancel"
+    }
   },
   "referencePricing": {
     "title": "EU Reference Prices",
@@ -428,5 +485,75 @@
     "regulatory": "Regulatory",
     "category": "Category",
     "resetWidths": "Reset column widths"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "backToCatalog": "Back to Catalog",
+    "kpi": {
+      "totalProducts": "Total Products",
+      "inCatalog": "in catalog",
+      "referencePrices": "Reference Prices",
+      "fromCountries": "from {count} {count, plural, =1 {country} other {countries}}",
+      "priceCoverage": "Price Coverage",
+      "ofProducts": "of products",
+      "vendors": "Vendors",
+      "registered": "registered",
+      "unprocessedSets": "Unprocessed Sets",
+      "setsToDecompose": "sets to decompose"
+    },
+    "charts": {
+      "priceScopeDistribution": "Price Scope Distribution",
+      "setDecompositionProgress": "Set Decomposition Progress",
+      "ofSets": "of {total} sets",
+      "sourceCountries": "Source Countries",
+      "topVendorsByProducts": "Top Vendors by Products",
+      "topManufacturers": "Top Manufacturers (Ref. Prices)",
+      "productsByCategory": "Products by EMDN Category",
+      "products": "Products:"
+    }
+  },
+  "sets": {
+    "title": "Sets Explorer",
+    "stats": {
+      "prices": "prices",
+      "xcCodes": "XC codes",
+      "manufacturers": "manufacturers",
+      "matchedProducts": "matched products",
+      "procedure": "procedure",
+      "decomposed": "decomposed"
+    },
+    "filters": {
+      "allManufacturers": "All manufacturers ({count})",
+      "clear": "Clear",
+      "showing": "Showing {count} of {total}"
+    },
+    "table": {
+      "code": "Code",
+      "description": "Description",
+      "emdn": "EMDN",
+      "mfrs": "Mfrs",
+      "count": "#",
+      "priceRange": "Price Range",
+      "match": "Match",
+      "scope": "Scope",
+      "status": "Status",
+      "actions": "Actions",
+      "manufacturer": "Manufacturer",
+      "priceEUR": "Price (EUR)",
+      "original": "Original",
+      "valid": "Valid",
+      "noSetPricesFound": "No set prices found"
+    },
+    "actions": {
+      "research": "Research"
+    },
+    "badges": {
+      "procedure": "Procedure",
+      "mixed": "Mixed",
+      "set": "Set",
+      "done": "Done",
+      "pending": "Pending"
+    },
+    "matchedProducts": "Matched catalog products ({count})"
   }
 }

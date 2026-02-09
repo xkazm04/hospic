@@ -1,0 +1,32 @@
+{
+  "84": {
+    "emdn_id": "2ce1b68f-0cab-4f15-9d12-c0775ee0890c",
+    "emdn_code": "P0912",
+    "emdn_name": "OSTEOSYNTHESIS DEVICES, DEVICES FOR TENDON AND LIGAMENT SYNTHESIS"
+  },
+  "86": {
+    "emdn_id": "e3f618b3-7382-4a85-8ad7-27f0b0ca7ac0",
+    "emdn_code": "P0909",
+    "emdn_name": "KNEE PROSTHESES"
+  },
+  "87": {
+    "emdn_id": "fc00ca61-9e2f-4288-ab66-19b6307a2567",
+    "emdn_code": "P0908",
+    "emdn_name": "HIP PROSTHESES"
+  },
+  "88": {
+    "emdn_id": "8c15f5cc-8b44-469b-b28c-7daab28b5199",
+    "emdn_code": "P09",
+    "emdn_name": "ORTHOPAEDIC PROSTHESES, OSTEOSYNTHESIS DEVICES, DEVICES FOR TENDON AND LIGAMENT SYNTHESIS"
+  },
+  "89": {
+    "emdn_id": "222f3892-643c-46f3-8341-cc698eac7f77",
+    "emdn_code": "P099001",
+    "emdn_name": "ORTHOPAEDIC PROSTHESES CEMENTS AND ACCESSORIES FOR MIXING"
+  },
+  "91": {
+    "emdn_id": "c8523557-f902-47c3-bee3-42085ef4dbef",
+    "emdn_code": "P091204",
+    "emdn_name": "EXTERNAL BONE FIXATION SYSTEMS"
+  }
+}

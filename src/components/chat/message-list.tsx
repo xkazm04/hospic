@@ -29,7 +29,6 @@ interface MessageListProps {
   onFilterVendor: () => void;
   onRegenerate?: () => void;
   activeSearch?: string;
-  activeVendor?: string;
   activeCategory?: string;
 }
 
@@ -105,7 +104,6 @@ export function MessageList({
   onFilterVendor,
   onRegenerate,
   activeSearch,
-  activeVendor,
   activeCategory,
 }: MessageListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -352,7 +350,6 @@ export function MessageList({
         <StarterPrompts
           onSelect={onSendMessage}
           activeSearch={activeSearch}
-          activeVendor={activeVendor}
           activeCategory={activeCategory}
         />
       ) : (

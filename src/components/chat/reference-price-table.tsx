@@ -1,7 +1,7 @@
 'use client';
 
 import { useLocale } from 'next-intl';
-import { ExternalLink, Star, Package, Puzzle, Activity } from 'lucide-react';
+import { ExternalLink, Star } from 'lucide-react';
 import { formatPriceWithCurrency } from '@/lib/utils/format-price';
 import { ConfidenceDots } from '@/components/ui/confidence-dots';
 import type { ReferencePrice } from '@/lib/types';
@@ -32,42 +32,8 @@ const COUNTRY_NAMES: Record<string, string> = {
   ES: 'Spain',
 };
 
-const PRICE_TYPE_LABELS: Record<string, string> = {
-  reimbursement_ceiling: 'Reimbursement',
-  tender_unit: 'Tender',
-  catalog_list: 'Catalog',
-  reference: 'Reference',
-};
-
 function isProductMatch(p: ReferencePrice): boolean {
   return p.match_type === 'product_match' || p.match_type === 'product_direct';
-}
-
-function scopeBadgeClass(scope: ReferencePrice['price_scope']): string {
-  switch (scope) {
-    case 'set': return 'bg-purple-100 text-purple-700';
-    case 'component': return 'bg-teal-100 text-teal-700';
-    case 'procedure': return 'bg-orange-100 text-orange-700';
-    default: return '';
-  }
-}
-
-function scopeLabel(scope: ReferencePrice['price_scope']): string {
-  switch (scope) {
-    case 'set': return 'Set';
-    case 'component': return 'Part';
-    case 'procedure': return 'Proc.';
-    default: return '';
-  }
-}
-
-function ScopeIcon({ scope }: { scope: ReferencePrice['price_scope'] }) {
-  switch (scope) {
-    case 'set': return <Package className="w-2.5 h-2.5" />;
-    case 'component': return <Puzzle className="w-2.5 h-2.5" />;
-    case 'procedure': return <Activity className="w-2.5 h-2.5" />;
-    default: return null;
-  }
 }
 
 interface ReferencePriceTableProps {
@@ -110,59 +76,61 @@ export function ReferencePriceTable({ prices }: ReferencePriceTableProps) {
         <thead>
           <tr className="bg-table-header">
             <th className="px-3 py-2 text-left font-medium border-b border-border/60">Country</th>
-            <th className="px-3 py-2 text-right font-medium border-b border-border/60">Price (EUR)</th>
-            <th className="px-3 py-2 text-left font-medium border-b border-border/60">Scope</th>
+            <th className="px-3 py-2 text-right font-medium border-b border-border/60">Price</th>
             <th className="px-3 py-2 text-left font-medium border-b border-border/60">Match</th>
-            <th className="px-3 py-2 text-left font-medium border-b border-border/60">Source</th>
-            <th className="px-3 py-2 text-left font-medium border-b border-border/60">Component</th>
+            <th className="px-3 py-2 text-left font-medium border-b border-border/60 w-0">Source</th>
+            <th className="px-3 py-2 text-left font-medium border-b border-border/60">Description</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-border/40">
-          {sorted.map((p) => (
-            <tr
-              key={p.id}
-              className={`hover:bg-muted/40 ${isProductMatch(p) ? 'bg-green-50/30' : ''}`}
-            >
-              <td className="px-3 py-2 whitespace-nowrap">
-                <span className="mr-1">{countryFlag(p.source_country)}</span>
-                {COUNTRY_NAMES[p.source_country] || p.source_country}
-              </td>
-              <td className="px-3 py-2 text-right tabular-nums font-semibold">
-                {formatPriceWithCurrency(p.price_eur, 'EUR', locale)}
-              </td>
-              <td className="px-3 py-2">
-                {p.price_scope && (
-                  <span className={`text-[10px] px-1 py-0.5 rounded inline-flex items-center gap-0.5 ${scopeBadgeClass(p.price_scope)}`}>
-                    <ScopeIcon scope={p.price_scope} />
-                    {scopeLabel(p.price_scope)}
-                  </span>
-                )}
-              </td>
-              <td className="px-3 py-2">
-                {p.match_type && (
-                  <ConfidenceDots matchType={p.match_type} showLabel />
-                )}
-              </td>
-              <td className="px-3 py-2">
-                {p.source_url ? (
-                  <a
-                    href={p.source_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-subtle hover:underline inline-flex items-center gap-1"
-                  >
-                    {p.source_name}
-                    <ExternalLink className="w-3 h-3" />
-                  </a>
-                ) : (
-                  <span>{p.source_name}</span>
-                )}
-              </td>
-              <td className="px-3 py-2 text-muted-foreground max-w-[180px] truncate">
-                {p.component_description || p.product_family || ''}
-              </td>
-            </tr>
-          ))}
+          {sorted.map((p) => {
+            const isOriginalEur = p.currency_original?.toUpperCase() === 'EUR';
+
+            return (
+              <tr
+                key={p.id}
+                className={`hover:bg-muted/40 ${isProductMatch(p) ? 'bg-green-50/30' : ''}`}
+              >
+                <td className="px-3 py-2 whitespace-nowrap">
+                  <span className="mr-1">{countryFlag(p.source_country)}</span>
+                  {COUNTRY_NAMES[p.source_country] || p.source_country}
+                </td>
+                <td className="px-3 py-2 text-right whitespace-nowrap">
+                  <div className="tabular-nums font-semibold">
+                    {formatPriceWithCurrency(p.price_eur, 'EUR', locale)}
+                  </div>
+                  {!isOriginalEur && p.price_original > 0 && (
+                    <div className="tabular-nums text-[10px] text-muted-foreground">
+                      {formatPriceWithCurrency(p.price_original, p.currency_original, locale)}
+                    </div>
+                  )}
+                </td>
+                <td className="px-3 py-2">
+                  {p.match_type && (
+                    <ConfidenceDots matchType={p.match_type} showLabel />
+                  )}
+                </td>
+                <td className="px-3 py-2 whitespace-nowrap">
+                  {p.source_url ? (
+                    <a
+                      href={p.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-subtle hover:underline inline-flex items-center gap-1"
+                    >
+                      {p.source_name}
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  ) : (
+                    <span>{p.source_name}</span>
+                  )}
+                </td>
+                <td className="px-3 py-2 text-muted-foreground truncate">
+                  {p.component_description || p.product_family || ''}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
     </div>

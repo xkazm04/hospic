@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useTransition, useEffect } from 'react'
+import { useState, useTransition, useEffect, useMemo } from 'react'
 import { useForm, SubmitHandler } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -10,6 +10,7 @@ import { productSchema } from '@/lib/schemas/product'
 import { createProduct } from '@/lib/actions/products'
 import { createVendor } from '@/lib/actions/vendors'
 import { findSimilarProducts, type SimilarProduct } from '@/lib/actions/similarity'
+import { getExchangeRates, type ExchangeRates, type Currency } from '@/lib/actions/exchange-rates'
 import { SimilarProductsWarning } from './similar-products-warning'
 import { toTitleCase } from '@/lib/utils/format-category'
 import { useToast } from '@/components/ui/toast'
@@ -28,7 +29,7 @@ interface ExtractionPreviewProps {
   vendors: { id: string; name: string }[]
   emdnCategories: { id: string; code: string; name: string }[]
   onSuccess: () => void
-  onCancel: () => void
+  onSkip?: () => void
 }
 
 // Badge component to show match status for catalog fields
@@ -50,12 +51,127 @@ function StatusBadge({ matched }: { matched: boolean }) {
   )
 }
 
+/** Convert a price from one currency to another using EUR-based rates */
+function convertPrice(
+  amount: number,
+  from: Currency,
+  to: Currency,
+  rates: ExchangeRates
+): number {
+  if (from === to) return amount
+  // Convert to EUR first
+  let eur: number
+  if (from === 'EUR') eur = amount
+  else if (from === 'CZK') eur = amount / rates.EUR_CZK
+  else eur = amount / rates.EUR_PLN
+  // Convert EUR to target
+  if (to === 'EUR') return eur
+  if (to === 'CZK') return eur * rates.EUR_CZK
+  return eur * rates.EUR_PLN
+}
+
+const CURRENCIES: Currency[] = ['EUR', 'CZK', 'PLN']
+const CURRENCY_SYMBOLS: Record<Currency, string> = { EUR: '€', CZK: 'Kč', PLN: 'zł' }
+
+/** Price trio: shows EUR/CZK/PLN — original is editable, others are auto-calculated */
+function PriceTrio({
+  originalCurrency,
+  watchedPrice,
+  rates,
+  priceField,
+  error,
+  inputClass,
+  labelClass,
+  errorClass,
+}: {
+  originalCurrency: Currency
+  watchedPrice: number | undefined
+  rates: ExchangeRates | null
+  priceField: React.InputHTMLAttributes<HTMLInputElement> & { ref: React.Ref<HTMLInputElement> }
+  error?: string
+  inputClass: string
+  labelClass: string
+  errorClass: string
+}) {
+  const t = useTranslations('extraction')
+
+  // Compute converted prices from the current form value
+  const converted = useMemo(() => {
+    const result: Record<Currency, string> = { EUR: '', CZK: '', PLN: '' }
+    const price = watchedPrice
+    if (price == null || isNaN(price) || !rates) return result
+
+    for (const cur of CURRENCIES) {
+      if (cur === originalCurrency) continue
+      const val = convertPrice(price, originalCurrency, cur, rates)
+      result[cur] = val.toFixed(2)
+    }
+    return result
+  }, [watchedPrice, originalCurrency, rates])
+
+  return (
+    <div>
+      <label className={labelClass}>{t('price')}</label>
+      <div className="grid grid-cols-3 gap-2 mt-1">
+        {CURRENCIES.map((cur) => {
+          const isOriginal = cur === originalCurrency
+          return (
+            <div key={cur} className="relative">
+              <div className="flex items-center gap-1 mb-1">
+                <span className="text-xs font-medium text-muted-foreground">{cur}</span>
+                {isOriginal && (
+                  <span className="text-[9px] font-medium px-1.5 py-0.5 rounded-full bg-blue-100 text-blue-700">
+                    {t('original')}
+                  </span>
+                )}
+              </div>
+              {isOriginal ? (
+                <div className="relative">
+                  <input
+                    id="price"
+                    type="number"
+                    step="0.01"
+                    {...priceField}
+                    className={`${inputClass} pr-8`}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                    {CURRENCY_SYMBOLS[cur]}
+                  </span>
+                </div>
+              ) : (
+                <div className="relative">
+                  <input
+                    type="text"
+                    readOnly
+                    tabIndex={-1}
+                    value={converted[cur] || '—'}
+                    className={`${inputClass} bg-muted/50 text-muted-foreground cursor-default pr-8`}
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                    {CURRENCY_SYMBOLS[cur]}
+                  </span>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+      {error && <p className={errorClass}>{error}</p>}
+      {rates && (
+        <p className="text-[10px] text-muted-foreground mt-1">
+          {t('ratesDate', { date: rates.effectiveDate })}
+        </p>
+      )}
+    </div>
+  )
+}
+
 export function ExtractionPreview({
   extractedData,
   vendors,
   emdnCategories,
   onSuccess,
-  onCancel,
+  onSkip,
 }: ExtractionPreviewProps) {
   const t = useTranslations('extraction')
   const tp = useTranslations('product')
@@ -81,7 +197,10 @@ export function ExtractionPreview({
     (c) => extractedData.suggested_emdn && c.code.startsWith(extractedData.suggested_emdn)
   )
 
-  // Check for similar products when component mounts or extracted data changes
+  // Exchange rates for price trio
+  const [rates, setRates] = useState<ExchangeRates | null>(null)
+
+  // Check for similar products + fetch exchange rates on mount
   useEffect(() => {
     async function checkSimilarity() {
       setSimilarityLoading(true)
@@ -96,6 +215,10 @@ export function ExtractionPreview({
     }
     checkSimilarity()
   }, [extractedData.name, extractedData.sku])
+
+  useEffect(() => {
+    getExchangeRates().then(setRates)
+  }, [])
 
   // Determine default vendor value: matched ID, or new vendor prefix if extracted but not matched
   const defaultVendorId = matchedVendor?.id
@@ -240,22 +363,17 @@ export function ExtractionPreview({
             )}
           </div>
 
-          {/* Price */}
-          <div>
-            <label htmlFor="price" className={labelClass}>
-              {tp('priceCZK')}
-            </label>
-            <input
-              id="price"
-              type="number"
-              step="0.01"
-              {...form.register('price')}
-              className={inputClass}
-            />
-            {form.formState.errors.price && (
-              <p className={errorClass}>{form.formState.errors.price.message}</p>
-            )}
-          </div>
+          {/* Price Trio */}
+          <PriceTrio
+            originalCurrency={extractedData.price_currency ?? 'EUR'}
+            watchedPrice={Number(form.watch('price')) || undefined}
+            rates={rates}
+            priceField={form.register('price')}
+            error={form.formState.errors.price?.message}
+            inputClass={inputClass}
+            labelClass={labelClass}
+            errorClass={errorClass}
+          />
         </div>
 
         {/* Right Column - Classification & Compliance */}
@@ -409,13 +527,15 @@ export function ExtractionPreview({
 
       {/* Buttons - Full width at bottom */}
       <div className="flex gap-3 pt-6 mt-6 border-t border-border">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="flex-1 border border-border text-foreground py-2.5 px-4 rounded-md font-medium hover:bg-muted transition-colors"
-        >
-          {tc('cancel')}
-        </button>
+        {onSkip && (
+          <button
+            type="button"
+            onClick={onSkip}
+            className="flex-1 border border-border text-muted-foreground py-2.5 px-4 rounded-md font-medium hover:bg-muted transition-colors"
+          >
+            {t('skip')}
+          </button>
+        )}
         <button
           type="submit"
           disabled={isPending}

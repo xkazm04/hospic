@@ -51,6 +51,7 @@
     "recharts": "^3.7.0",
     "remark-gfm": "^4.0.1",
     "usehooks-ts": "^3.1.1",
+    "xlsx": "^0.18.5",
     "zod": "^4.3.6"
   },
   "devDependencies": {
@@ -65,7 +66,6 @@
     "pg": "^8.18.0",
     "tailwindcss": "^4",
     "tsx": "^4.21.0",
-    "typescript": "^5",
-    "xlsx": "^0.18.5"
+    "typescript": "^5"
   }
 }

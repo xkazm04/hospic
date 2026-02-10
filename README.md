@@ -228,6 +228,15 @@ Built-in circuit breaker pattern prevents infinite loops during SSR hydration is
 4. Run linting: `npm run lint`
 5. Submit a pull request
 
+## Update v1.1
+
+- **Authentication**: Simple token-based login with middleware-protected routes
+- **Batch AI Extraction**: Parse CSV/XLSX spreadsheets row-by-row via Gemini, with resumable sessions persisted to DB
+- **Multi-Currency Prices**: EUR/CZK/PLN display using live ECB exchange rates (Frankfurter API, daily refresh)
+- **XLSX Export**: Smart scope detection (all / filtered / selected rows) with paginated fetch for large datasets
+- **Enriched Extraction Schema**: New fields for price currency, EMDN source provenance, and product URL
+- **Extraction UX**: Tabbed single/batch mode, collapsible URL input, skip & back navigation for review flows
+
 ## License
 
 Private - All rights reserved.

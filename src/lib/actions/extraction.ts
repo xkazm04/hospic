@@ -1,6 +1,7 @@
 "use server";
 
 import { getAIClient, EXTRACTION_MODEL } from "@/lib/gemini/client";
+import { lookupEmdnViaEudamed } from "@/lib/gemini/eudamed-lookup";
 import {
   extractedProductSchema,
   extractedProductJsonSchema,
@@ -108,6 +109,22 @@ export async function extractFromUrl(url: string): Promise<ExtractionResult> {
     const parsed = JSON.parse(response.text);
     const validated = extractedProductSchema.parse(parsed);
 
+    // Enrich with EUDAMED lookup (overwrites step 1 EMDN if found)
+    try {
+      const eudamed = await lookupEmdnViaEudamed(
+        validated.name,
+        validated.manufacturer_name,
+        validated.sku
+      );
+      if (eudamed.code) {
+        validated.suggested_emdn = eudamed.code;
+        validated.emdn_source = eudamed.source;
+        validated.emdn_rationale = eudamed.rationale;
+      }
+    } catch {
+      /* keep step 1 result */
+    }
+
     return { success: true, data: validated };
   } catch (error) {
     return {
@@ -139,6 +156,22 @@ export async function extractFromContent(
     }
     const parsed = JSON.parse(response.text);
     const validated = extractedProductSchema.parse(parsed);
+
+    // Enrich with EUDAMED lookup (overwrites step 1 EMDN if found)
+    try {
+      const eudamed = await lookupEmdnViaEudamed(
+        validated.name,
+        validated.manufacturer_name,
+        validated.sku
+      );
+      if (eudamed.code) {
+        validated.suggested_emdn = eudamed.code;
+        validated.emdn_source = eudamed.source;
+        validated.emdn_rationale = eudamed.rationale;
+      }
+    } catch {
+      /* keep step 1 result */
+    }
 
     return { success: true, data: validated };
   } catch (error) {
@@ -221,6 +254,12 @@ function getExtractionGuidelines(): string {
   - Extract the primary unit price, not bulk/quantity pricing
   - Set to null if not explicitly stated
 
+- **price_currency**: Identify the currency of the extracted price
+  - Valid values: "EUR", "CZK", "PLN"
+  - Look for currency symbols (€, Kč, zł), codes (EUR, CZK, PLN), or contextual clues (country of vendor)
+  - If price has no explicit currency, infer from vendor country or document language (Czech → CZK, Polish → PLN, otherwise → EUR)
+  - Set to null if price is null or currency cannot be determined
+
 ### Regulatory & Compliance Information
 - **ce_marked**: Boolean - true if CE marking is mentioned
   - Look for: CE, CE marked, CE certification, European Conformity
@@ -236,69 +275,30 @@ function getExtractionGuidelines(): string {
   - Set to null if not provided
 
 ### EMDN Classification
-- **suggested_emdn**: Suggest the most appropriate EMDN code based on product type. Use the MOST SPECIFIC code possible.
+- **suggested_emdn**: Suggest an EMDN code if you can identify the product type
+  - Format: P followed by digits (e.g., P0908030102)
+  - Orthopedic implants use P09xx codes: P0901=shoulder, P0902=elbow, P0905=ankle, P0907=spine, P0908=hip, P0909=knee
+  - Use the most specific (deepest) code you are confident about
+  - Only suggest if reasonably confident; set to null if uncertain
 
-  **EMDN CATEGORY HIERARCHY (use exact codes):**
+- **emdn_source**: "document" if EMDN code is explicitly in the source, otherwise "inferred"
+  - Set to null if no EMDN code was suggested
 
-  **P0901 - SHOULDER PROSTHESES:**
-  - P090103 - Glenoid components
-    - P09010301 - Metal back and metaglene glenoid baseplates
-    - P09010302 - Anatomical shoulder prosthesis inserts
-    - P09010303 - Glenospheres
-    - P09010304 - Monoblock glenoids
-  - P090104 - Humeral components
-    - P09010401 - Epiphysary humeral components (heads, cups)
-    - P09010402 - Diaphysary humeral components (stems)
-
-  **P0902 - ELBOW PROSTHESES:**
-  - P090203 - Humeral components
-  - P090204 - Radial components
-  - P090205 - Ulnar components
-
-  **P0905 - ANKLE PROSTHESES:**
-  - P090506 - Ankle prosthesis with mobile insert
-  - P090507 - Ankle prosthesis with fixed insert
-
-  **P0907 - SPINE STABILISATION:**
-  - P090701 - Spinal fusion systems (P09070101 - Spinal cages)
-  - P090702 - Intervertebral disc replacement
-  - P090703 - Spinal fixation systems
-
-  **P0908 - HIP PROSTHESES (most common):**
-  - P090803 - Acetabular components
-    - P09080301 - Primary implant acetabular cups
-      - P0908030101 - Cemented acetabular cups
-      - P0908030102 - Uncemented acetabular cups
-    - P09080304 - Acetabular inserts (P0908030401 polyethylene, P0908030402 ceramic)
-    - P09080305 - Dual-mobility acetabular components
-  - P090804 - Femoral components
-    - P09080401 - Primary femoral stems
-      - P0908040101 - Cemented femoral stems
-      - P0908040102 - Uncemented femoral stems
-    - P09080403 - Revision femoral stems
-    - P09080405 - Femoral heads
-      - P0908040501 - Partial hip replacement heads
-      - P0908040502 - Total hip replacement heads (ceramic: P090804050201, metal: P090804050202)
-    - P09080407 - Modular necks
-  - P090880 - Hip prostheses accessories (screws, augments, adapters)
-
-  **CLASSIFICATION RULES:**
-  1. ALWAYS use the most specific (longest) code that matches the product
-  2. Hip acetabular cup → P0908030101 (cemented) or P0908030102 (uncemented)
-  3. Hip femoral stem → P0908040101 (cemented) or P0908040102 (uncemented)
-  4. Hip femoral head → P090804050201 (ceramic) or P090804050202 (metal)
-  5. Shoulder stem → P09010402xx based on type
-  6. Knee prosthesis → Use P0909 category (not shown - use general if unsure)
-  7. If unsure between levels, prefer the more specific child category
-
-- **emdn_rationale**: Provide a brief explanation (1-2 sentences) for why you selected this EMDN category.
+- **emdn_rationale**: Brief explanation (1-2 sentences) for why this EMDN category was chosen
   - Reference specific product characteristics that led to the classification
-  - Example: "Classified as P0908030102 (uncemented acetabular cup) because product is a porous-coated titanium shell designed for press-fit fixation without cement."
+
+### Product URL
+- **product_url**: Try to provide the official product page URL from the manufacturer's website
+  - For well-known manufacturers (Stryker, DePuy/J&J, Zimmer Biomet, Smith+Nephew, Medtronic, B.Braun, Aesculap), construct the likely product page URL based on the product name and manufacturer
+  - Format: full URL including https://
+  - Example: "https://www.stryker.com/us/en/joint-replacement/products/trident-ii.html"
+  - If you cannot determine the URL with reasonable confidence, set to null
 
 ## CRITICAL RULES
 1. Extract ONLY what is explicitly stated in the document
 2. Set fields to null if information is not found - do NOT guess or infer
 3. For regulatory fields (MDR class, CE marking), only mark true/extract if explicitly confirmed
 4. Material names should be technical/clinical, not marketing terms
-5. Prices should be numeric only, converted to base unit if needed`;
+5. Prices should be numeric only, converted to base unit if needed
+6. For product_url, only provide URLs you are reasonably confident exist — do NOT fabricate URLs`;
 }

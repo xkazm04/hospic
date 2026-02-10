@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EU Reference Pricing — Data Sources</title>
+<style>
+  @page {
+    size: A4;
+    margin: 20mm 18mm;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Inter, -apple-system, system-ui, sans-serif;
+    color: #1a1a2e;
+    background: #fff;
+    line-height: 1.55;
+    font-size: 13px;
+    padding: 40px 48px;
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+
+  /* Header */
+  .report-header {
+    border-bottom: 3px solid #2563eb;
+    padding-bottom: 16px;
+    margin-bottom: 32px;
+  }
+  .report-header h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #1e293b;
+    letter-spacing: -0.5px;
+  }
+  .report-header .subtitle {
+    font-size: 13px;
+    color: #64748b;
+    margin-top: 4px;
+  }
+
+  /* Section headings */
+  h2 {
+    font-size: 17px;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 28px 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 1.5px solid #e2e8f0;
+  }
+  h3 {
+    font-size: 14px;
+    font-weight: 700;
+    color: #334155;
+    margin: 22px 0 8px;
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px 0 20px;
+    font-size: 12.5px;
+  }
+  thead th {
+    background: #f1f5f9;
+    color: #475569;
+    font-weight: 600;
+    text-align: left;
+    padding: 8px 10px;
+    border-bottom: 2px solid #cbd5e1;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  tbody td {
+    padding: 7px 10px;
+    border-bottom: 1px solid #e2e8f0;
+    vertical-align: top;
+  }
+  tbody tr:hover { background: #f8fafc; }
+  tbody tr:last-child td { border-bottom: none; }
+
+  /* Tier badges */
+  .tier { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 7px; border-radius: 4px; white-space: nowrap; }
+  .tier-t1 { background: #dcfce7; color: #166534; }
+  .tier-t2 { background: #fef9c3; color: #854d0e; }
+  .tier-t3 { background: #e0e7ff; color: #3730a3; }
+  .tier-t99 { background: #fee2e2; color: #991b1b; }
+
+  /* Status badges */
+  .status { display: inline-block; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; white-space: nowrap; }
+  .status-importable { background: #dcfce7; color: #166534; }
+  .status-blocked { background: #fee2e2; color: #991b1b; }
+  .status-not-importable { background: #fef3c7; color: #92400e; }
+  .status-not-imported { background: #e0e7ff; color: #3730a3; }
+  .status-superseded { background: #f1f5f9; color: #64748b; }
+  .status-not-useful { background: #f1f5f9; color: #64748b; }
+
+  /* Detail sections */
+  .source-detail {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-left: 4px solid #2563eb;
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin: 10px 0 20px;
+    page-break-inside: avoid;
+  }
+  .source-detail h3 {
+    margin: 0 0 8px;
+    font-size: 14px;
+    color: #1e293b;
+  }
+  .source-detail .meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 24px;
+    margin: 8px 0;
+  }
+  .source-detail .meta-item {
+    font-size: 12.5px;
+    line-height: 1.5;
+  }
+  .source-detail .meta-item .label {
+    font-weight: 600;
+    color: #475569;
+  }
+  .source-detail p {
+    font-size: 12.5px;
+    margin: 6px 0;
+    color: #475569;
+  }
+  .source-detail .note {
+    font-style: italic;
+    color: #64748b;
+    font-size: 12px;
+    margin-top: 6px;
+  }
+
+  code {
+    font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', Consolas, monospace;
+    font-size: 11.5px;
+    background: #f1f5f9;
+    padding: 1px 5px;
+    border-radius: 3px;
+    color: #475569;
+  }
+
+  /* Potential expansion */
+  .effort-low { color: #166534; }
+  .effort-medium { color: #854d0e; }
+  .effort-high { color: #991b1b; }
+
+  /* Print adjustments */
+  @media print {
+    body { padding: 0; font-size: 12px; }
+    .source-detail { break-inside: avoid; }
+    tbody tr:hover { background: transparent; }
+    h2 { break-after: avoid; }
+  }
+
+  /* Footer */
+  .report-footer {
+    margin-top: 32px;
+    padding-top: 12px;
+    border-top: 1px solid #e2e8f0;
+    font-size: 11px;
+    color: #94a3b8;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="report-header">
+  <h1>EU Reference Pricing — Data Sources</h1>
+  <div class="subtitle">MedCatalog &middot; Orthopedic Medical Device Catalog &middot; Generated February 2026</div>
+</div>
+
+<!-- ===== ALL PRICING SOURCES ===== -->
+<h2>All Pricing Sources</h2>
+<table>
+  <thead>
+    <tr>
+      <th style="width:20%">Source</th>
+      <th style="width:7%">Country</th>
+      <th style="width:18%">Data Type</th>
+      <th style="width:22%">How Used</th>
+      <th style="width:11%">Quality</th>
+      <th style="width:22%">Coverage</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>SK MZ SR SZM Excel</strong></td>
+      <td>SK</td>
+      <td>Reimbursement ceilings per device</td>
+      <td>Quarterly import script (<code>import:sk-szm</code>)</td>
+      <td><span class="tier tier-t1">T1 Official</span></td>
+      <td>839 prices, 127 categories, 712 devices</td>
+    </tr>
+    <tr>
+      <td><strong>FR LPPR tariffs</strong></td>
+      <td>FR</td>
+      <td>Reimbursement ceilings per component</td>
+      <td>Import script (<code>import:lppr</code>)</td>
+      <td><span class="tier tier-t1">T1 Official</span></td>
+      <td>6 knee revision tariffs (expandable)</td>
+    </tr>
+    <tr>
+      <td><strong>CZ SZP CR code list</strong></td>
+      <td>CZ</td>
+      <td>Per-device reimbursement prices</td>
+      <td>Import script (<code>import:cz-szpcr</code>)</td>
+      <td><span class="tier tier-t1">T1 Official</span></td>
+      <td>Est. 500&ndash;2,000+ orthopedic implant entries</td>
+    </tr>
+    <tr>
+      <td><strong>GB NHS Tariff</strong></td>
+      <td>GB</td>
+      <td>Procedure-level prices per HRG code</td>
+      <td>Import script (<code>import:gb-nhs</code>)</td>
+      <td><span class="tier tier-t1">T1 Official</span></td>
+      <td>~25 orthopedic procedure codes</td>
+    </tr>
+    <tr>
+      <td><strong>FR LPPR (ameli.fr)</strong></td>
+      <td>FR</td>
+      <td>Reimbursement tariffs, LPP codes</td>
+      <td>Gemini web search (chat + test)</td>
+      <td><span class="tier tier-t1">T1 Official</span></td>
+      <td>Found for 5/10 test products</td>
+    </tr>
+    <tr>
+      <td><strong>SK MZ SR (kategorizacia)</strong></td>
+      <td>SK</td>
+      <td>Category reimbursement ceilings</td>
+      <td>Gemini web search (chat + test)</td>
+      <td><span class="tier tier-t1">T1 Official</span></td>
+      <td>Found for 3/10 test products</td>
+    </tr>
+    <tr>
+      <td><strong>EU TED (ted.europa.eu)</strong></td>
+      <td>EU</td>
+      <td>Tender award values</td>
+      <td>Not importable &mdash; lot totals only, no unit prices</td>
+      <td><span class="tier tier-t2">T2 Tender</span></td>
+      <td>0 usable unit prices</td>
+    </tr>
+    <tr>
+      <td><strong>GB NHS Supply Chain (TOS3)</strong></td>
+      <td>GB</td>
+      <td>Framework agreement unit prices</td>
+      <td>Not available &mdash; behind NHS auth</td>
+      <td><span class="tier tier-t2">T2 Tender</span></td>
+      <td>Blocked</td>
+    </tr>
+    <tr>
+      <td><strong>IN NPPA</strong></td>
+      <td>IN</td>
+      <td>Ceiling prices for knee implants</td>
+      <td>Not imported &mdash; 19 entries, knee only, non-EU</td>
+      <td><span class="tier tier-t3">T3 Non-EU</span></td>
+      <td>19 knee component prices</td>
+    </tr>
+    <tr>
+      <td><strong>CZ openprocurements</strong></td>
+      <td>CZ</td>
+      <td>Lot-level tender estimates</td>
+      <td>Not importable &mdash; lot totals only</td>
+      <td><span class="tier tier-t2">T2 Tender</span></td>
+      <td>0 usable unit prices</td>
+    </tr>
+    <tr>
+      <td><strong>SUKL ZPSCAU (CZ)</strong></td>
+      <td>CZ</td>
+      <td>Outpatient device prices</td>
+      <td>Not used &mdash; no surgical implants</td>
+      <td><span class="tier" style="background:#f1f5f9;color:#64748b">N/A</span></td>
+      <td>0 orthopedic implants</td>
+    </tr>
+    <tr>
+      <td><strong>VZP ZUM catalog (CZ)</strong></td>
+      <td>CZ</td>
+      <td>Surgical implant reimbursement</td>
+      <td>Superseded by SZP CR</td>
+      <td><span class="tier tier-t1">T1 Official</span></td>
+      <td>Covered via SZP CR</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ===== SOURCE QUALITY TIERS ===== -->
+<h2>Source Quality Tiers</h2>
+<table>
+  <thead>
+    <tr>
+      <th style="width:10%">Tier</th>
+      <th style="width:35%">Description</th>
+      <th>Sources</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><span class="tier tier-t1">T1</span></td>
+      <td>Official national reimbursement registries</td>
+      <td>FR LPPR, SK MZ SR, CZ SZP CR, GB NHS Tariff</td>
+    </tr>
+    <tr>
+      <td><span class="tier tier-t2">T2</span></td>
+      <td>Official procurement / tender portals</td>
+      <td>EU TED, GB NHS Supply Chain, CZ/HU national tenders</td>
+    </tr>
+    <tr>
+      <td><span class="tier tier-t3">T3</span></td>
+      <td>Non-EU official ceiling prices</td>
+      <td>IN NPPA</td>
+    </tr>
+    <tr>
+      <td><span class="tier tier-t99">T99</span></td>
+      <td>Blocked &mdash; retail marketplaces</td>
+      <td>IndiaMART, Hospital Store, Tradeindia, MedicalExpo, etc.</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ===== BY ACCESS METHOD ===== -->
+<h2>By Access Method</h2>
+<table>
+  <thead>
+    <tr>
+      <th style="width:25%">Method</th>
+      <th style="width:40%">Sources Used</th>
+      <th>When Triggered</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Import scripts</strong> (one-time / quarterly)</td>
+      <td>SK SZM Excel, FR LPPR, CZ SZP CR, GB NHS Tariff</td>
+      <td>Scheduled/manual DB refresh (<code>npm run import:*</code>)</td>
+    </tr>
+    <tr>
+      <td><strong>Gemini web search</strong> (chat tool)</td>
+      <td>FR LPPR, SK MZ SR, EU TED, GB NHS, IN NPPA, CZ tenders</td>
+      <td>User asks about prices/alternatives in chat</td>
+    </tr>
+    <tr>
+      <td><strong>Deep research prompt</strong> (product detail)</td>
+      <td>Links to legifrance.gouv.fr, kategorizacia.mzsr.sk, EUDAMED</td>
+      <td>User clicks "Research EU Pricing" on product detail page</td>
+    </tr>
+    <tr>
+      <td><strong>DB lookup</strong> (reference_prices table)</td>
+      <td>All imported data (SK + FR + CZ + GB)</td>
+      <td><code>lookupReferencePrices</code> chat tool, <code>ReferencePricesWidget</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- ===== DETAILED SOURCE INVESTIGATIONS ===== -->
+<h2>Detailed Source Investigations</h2>
+
+<!-- CZ SZP CR -->
+<div class="source-detail">
+  <h3>CZ SZP CR &mdash; Czech Reimbursement Prices <span class="status status-importable">IMPORTABLE</span></h3>
+  <p>Ready for import &mdash; structured XLS, freely downloadable</p>
+  <div class="meta-grid">
+    <div class="meta-item"><span class="label">Source URL:</span> <code>szpcr.cz/zdravotnicke_prostredky</code></div>
+    <div class="meta-item"><span class="label">Format:</span> XLS with 25 structured columns</div>
+    <div class="meta-item"><span class="label">Coverage:</span> All Czech health insurers, surgical implants (groups 01, 41&ndash;92)</div>
+    <div class="meta-item"><span class="label">Price scope:</span> <code>component</code> (per-device unit prices in CZK)</div>
+    <div class="meta-item"><span class="label">Key fields:</span> KOD, NAZ (name), DOP (desc), VYR (manufacturer), AKC (price), CMF (regulated price), MAX (max reimbursement), UHP (%), JKP (classification)</div>
+    <div class="meta-item"><span class="label">Currency:</span> CZK &rarr; EUR at ECB rate (~25.3 CZK/EUR)</div>
+    <div class="meta-item"><span class="label">EMDN codes:</span> Mandatory since Dec 2025 &mdash; direct category linking</div>
+    <div class="meta-item"><span class="label">Import script:</span> <code>npm run import:cz-szpcr</code></div>
+    <div class="meta-item"><span class="label">Estimated entries:</span> 500&ndash;2,000+ orthopedic implant rows</div>
+    <div class="meta-item"><span class="label">Coverage impact:</span> +10&ndash;20% product match rate</div>
+  </div>
+  <p class="note">Supersedes VZP ZUM PDF &mdash; same underlying data in structured XLS format, eliminating the need for PDF/OCR extraction.</p>
+</div>
+
+<!-- GB NHS Tariff -->
+<div class="source-detail">
+  <h3>GB NHS Tariff &mdash; UK Procedure Prices <span class="status status-importable">IMPORTABLE</span></h3>
+  <p>Ready for import &mdash; XLSX workbook, freely downloadable</p>
+  <div class="meta-grid">
+    <div class="meta-item"><span class="label">Source:</span> NHS England National Payment Scheme workbook (XLSX), published annually</div>
+    <div class="meta-item"><span class="label">Format:</span> XLSX with structured columns per HRG code</div>
+    <div class="meta-item"><span class="label">Coverage:</span> HRG procedure tariffs for orthopedic procedures</div>
+    <div class="meta-item"><span class="label">Price scope:</span> <code>procedure</code> (total cost incl. implant + surgery)</div>
+    <div class="meta-item"><span class="label">Relevant HRG codes:</span> HB11&ndash;HB22 (joint replacements), HB31&ndash;HB39 (revisions)</div>
+    <div class="meta-item"><span class="label">Currency:</span> GBP &rarr; EUR at ECB rate</div>
+    <div class="meta-item"><span class="label">Import script:</span> <code>npm run import:gb-nhs</code></div>
+    <div class="meta-item"><span class="label">Estimated entries:</span> ~25 orthopedic HRG codes</div>
+    <div class="meta-item"><span class="label">Coverage impact:</span> +1% product matches, adds UK as reference geography</div>
+  </div>
+  <p class="note">Limitation: No per-implant breakdown &mdash; implant cost is ~15&ndash;20% of total procedure tariff.</p>
+</div>
+
+<!-- EU TED -->
+<div class="source-detail" style="border-left-color: #eab308;">
+  <h3>EU TED Open Data <span class="status status-not-importable">NOT IMPORTABLE</span></h3>
+  <p>Investigated, not useful for per-device pricing</p>
+  <div class="meta-grid">
+    <div class="meta-item"><span class="label">Access:</span> CSV bulk files at <code>data.europa.eu</code>, API at <code>api.ted.europa.eu</code></div>
+    <div class="meta-item"><span class="label">Fields:</span> Notice ID, buyer, CPV code, award value (EUR), winner, lot number, country</div>
+  </div>
+  <p>Only lot/contract-level totals (e.g., "EUR 2M for 4-year hip implant framework"), no unit prices or device-level breakdown. CPV 33183100 (orthopedic implants) is too broad. Supplier names are free-text and inconsistent.</p>
+  <p class="note">Use case: Market structure analysis only (which suppliers win in which countries), not reference pricing.</p>
+</div>
+
+<!-- GB NHS Supply Chain -->
+<div class="source-detail" style="border-left-color: #ef4444;">
+  <h3>GB NHS Supply Chain / TOS3 Framework <span class="status status-blocked">BLOCKED</span></h3>
+  <p>Commercially confidential, behind authentication</p>
+  <div class="meta-grid">
+    <div class="meta-item"><span class="label">Framework:</span> TOS3 (Feb 2024 &ndash; Jan 2028), covers all orthopedic implants with banded volume pricing</div>
+    <div class="meta-item"><span class="label">Access:</span> NHS trusts only via <code>my.supplychain.nhs.uk</code></div>
+  </div>
+  <p>NJR EMBED/INFORM benchmarking tools aggregate trust-level prices but access restricted to subscribers. No public CSV/Excel/API export.</p>
+  <p class="note">Not accessible without NHS procurement contact.</p>
+</div>
+
+<!-- IN NPPA -->
+<div class="source-detail" style="border-left-color: #6366f1;">
+  <h3>IN NPPA &mdash; Indian Ceiling Prices <span class="status status-not-imported">NOT IMPORTED</span></h3>
+  <p>Technically trivial but low value for EU-focused catalog</p>
+  <div class="meta-grid">
+    <div class="meta-item"><span class="label">Coverage:</span> 19 entries &mdash; 15 primary + 4 revision <strong>knee</strong> components only</div>
+    <div class="meta-item"><span class="label">Price level:</span> 70&ndash;85% below EU (Rs 51,563 &asymp; EUR 543 for TKR vs EUR 2,000&ndash;8,000 in EU)</div>
+    <div class="meta-item"><span class="label">Limitation:</span> No manufacturer dimension, INR/EUR volatile (16% swing in 2025)</div>
+    <div class="meta-item"><span class="label">Format:</span> Government Gazette PDF only</div>
+  </div>
+  <p class="note">Skipped: Non-EU, minimal coverage, price levels not comparable.</p>
+</div>
+
+<!-- CZ openprocurements -->
+<div class="source-detail" style="border-left-color: #eab308;">
+  <h3>CZ openprocurements / Hlidac statu <span class="status status-not-importable">NOT IMPORTABLE</span></h3>
+  <p>Only lot-level contract values, no unit prices</p>
+  <div class="meta-grid">
+    <div class="meta-item"><span class="label">Data:</span> 60+ orthopedic tenders via CPV 33183100, lot-level estimated values</div>
+    <div class="meta-item"><span class="label">Unit prices:</span> In PDF attachments on TenderArena (behind auth)</div>
+  </div>
+  <p class="note">Same fundamental limitation as TED: no per-device price breakdown.</p>
+</div>
+
+<!-- NJR / ODEP -->
+<div class="source-detail" style="border-left-color: #94a3b8;">
+  <h3>NJR / ODEP (UK) <span class="status" style="background:#f1f5f9;color:#64748b">CATALOG ENRICHMENT ONLY</span></h3>
+  <p>No pricing data, useful for product catalog enrichment only</p>
+  <div class="meta-grid">
+    <div class="meta-item"><span class="label">NJR Annual Reports:</span> Top implant brands by usage volume, revision rates &mdash; CSV from <code>reports.njrcentre.org.uk</code></div>
+    <div class="meta-item"><span class="label">ODEP Ratings:</span> Quality ratings for 200+ implant brands (10A*, 13A*, etc.) at <code>odep.org.uk</code></div>
+  </div>
+  <p class="note">Useful for brand validation and quality metadata, not for reference pricing.</p>
+</div>
+
+<!-- SUKL ZPSCAU -->
+<div class="source-detail" style="border-left-color: #94a3b8;">
+  <h3>SUKL ZPSCAU (CZ) <span class="status status-not-useful">NOT USEFUL</span></h3>
+  <p>12,848-row XLSX inspected (March 2024). Contains only voucher-dispensed outpatient devices (braces, hearing aids, wound care). Zero surgical implant entries &mdash; orthopedic implants reimbursed through hospital DRG.</p>
+</div>
+
+<!-- ===== SK SZM DETAILS ===== -->
+<h2>SK SZM Details</h2>
+<div class="source-detail">
+  <h3>SK MZ SR SZM &mdash; Slovak Reimbursement Registry</h3>
+  <div class="meta-grid">
+    <div class="meta-item"><span class="label">Source file:</span> <code>health.gov.sk/.../Zoznam_SZM_YYYYMM.xlsx</code></div>
+    <div class="meta-item"><span class="label">Update cadence:</span> Quarterly (Jan 1, Apr 1, Jul 1, Oct 1)</div>
+    <div class="meta-item"><span class="label">XC code groups:</span> XC1 (hip), XC2 (knee), XC3 (other joints), XC4 (osteosynthesis), XC5 (arthroscopy)</div>
+    <div class="meta-item"><span class="label">Price columns:</span> UZP (per-device reimbursement), UZP2 (category-level ceiling per set)</div>
+    <div class="meta-item"><span class="label">XC-to-EMDN mapping:</span> AI-assisted via Gemini, cached in <code>scripts/data/sk-xc-emdn-mapping.json</code></div>
+  </div>
+</div>
+
+<!-- ===== POTENTIAL EXPANSION ===== -->
+<h2>Potential Expansion</h2>
+<table>
+  <thead>
+    <tr>
+      <th style="width:35%">Source</th>
+      <th style="width:15%">Effort</th>
+      <th style="width:35%">Potential Impact</th>
+      <th style="width:15%">Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Expand FR LPPR (scrape ameli.fr)</td>
+      <td><span class="effort-medium">Medium</span> &mdash; need to map more LPP codes</td>
+      <td>Could cover all joint prosthesis categories</td>
+      <td>Planned</td>
+    </tr>
+    <tr>
+      <td>DE InEK / G-DRG (Germany)</td>
+      <td><span class="effort-high">High</span> &mdash; need to identify data access</td>
+      <td>Germany's DRG procedure pricing</td>
+      <td>Not investigated</td>
+    </tr>
+    <tr>
+      <td>AT LKF (Austria)</td>
+      <td><span class="effort-medium">Medium</span> &mdash; structured tariff data</td>
+      <td>Austrian procedure tariffs</td>
+      <td>Not investigated</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="report-footer">
+  MedCatalog &mdash; EU Reference Pricing Data Sources &middot; February 2026
+</div>
+
+</body>
+</html>

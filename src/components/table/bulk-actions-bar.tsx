@@ -3,7 +3,7 @@
 import { motion, AnimatePresence } from "motion/react";
 import { Download, MessageSquare, X, GitCompare } from "lucide-react";
 import { useTranslations } from "next-intl";
-import { productsToCSV, downloadCSV, getExportFilename } from "@/lib/utils/csv-export";
+import { productsToXLSX, downloadXLSX, getExportFilename } from "@/lib/utils/xlsx-export";
 import { useChatContextOptional } from "@/lib/hooks/use-chat-context";
 import type { ProductWithRelations } from "@/lib/types";
 import type { ColumnVisibility } from "./column-visibility-toggle";
@@ -20,8 +20,8 @@ export function BulkActionsBar({ selectedProducts, columnVisibility, onClear }: 
   const count = selectedProducts.length;
 
   const handleExport = () => {
-    const csv = productsToCSV(selectedProducts, columnVisibility);
-    downloadCSV(csv, getExportFilename('selected') + '.csv');
+    const blob = productsToXLSX(selectedProducts, columnVisibility);
+    downloadXLSX(blob, getExportFilename('selected'));
   };
 
   const handleAskAI = () => {

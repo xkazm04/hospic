@@ -26,6 +26,7 @@ import { ExportMenu } from "./export-menu";
 import { BulkActionsBar } from "./bulk-actions-bar";
 import { SearchInput } from "@/components/filters/search-input";
 import type { ProductWithRelations } from "@/lib/types";
+import type { ExportFilters } from "@/lib/actions/export";
 
 interface DataTableProps<TData> {
   columns: ColumnDef<TData>[];
@@ -172,10 +173,34 @@ export function DataTable<TData>({
     [updateURL]
   );
 
-  // Check if any filters are active (for contextual empty state)
+  // Check if any filters are active (for contextual empty state + export)
   const hasActiveFilters = useMemo(() => {
     const filterKeys = ['search', 'vendor', 'category', 'material', 'ceMarked', 'mdrClass', 'manufacturer', 'minPrice', 'maxPrice'];
     return filterKeys.some(key => searchParams.has(key));
+  }, [searchParams]);
+
+  // Build export filters from URL search params
+  const exportFilters = useMemo((): ExportFilters => {
+    const f: ExportFilters = {};
+    const s = searchParams.get('search');
+    const v = searchParams.get('vendor');
+    const c = searchParams.get('category');
+    const mat = searchParams.get('material');
+    const ce = searchParams.get('ceMarked');
+    const mdr = searchParams.get('mdrClass');
+    const mfr = searchParams.get('manufacturer');
+    const minP = searchParams.get('minPrice');
+    const maxP = searchParams.get('maxPrice');
+    if (s) f.search = s;
+    if (v) f.vendor = v;
+    if (c) f.category = c;
+    if (mat) f.material = mat;
+    if (ce) f.ceMarked = ce;
+    if (mdr) f.mdrClass = mdr;
+    if (mfr) f.manufacturer = mfr;
+    if (minP) f.minPrice = Number(minP);
+    if (maxP) f.maxPrice = Number(maxP);
+    return f;
   }, [searchParams]);
 
   const handleClearFilters = useCallback(() => {
@@ -283,8 +308,12 @@ export function DataTable<TData>({
         <div className="flex items-center gap-2 ml-auto">
           <ExportMenu
             products={data as unknown as ProductWithRelations[]}
+            selectedProducts={selectedProducts}
             columnVisibility={columnVisibility}
             totalCount={totalCount}
+            filteredCount={totalCount}
+            filters={exportFilters}
+            hasActiveFilters={hasActiveFilters}
           />
           <ColumnVisibilityToggle
             visibility={columnVisibility}
